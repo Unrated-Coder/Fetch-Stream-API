@@ -182,7 +182,7 @@ To run this project locally on your machine, follow these steps:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/<your-username>/fetch-stream.git
+   git clone https://github.com/shinubo28always/fetch-stream.git
    cd fetch-stream
    ```
 
