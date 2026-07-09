@@ -9,20 +9,22 @@ app.use(express.json());
 
 // Target Domain Configurations
 const ANIMESALT_BASE = "https://animesalt.ac";
-const TOONSTREAM_BASE = "https://toon-stream.site"; // Updated as per your live link
+const TOONSTREAM_BASE = "https://toon-stream.site";
 
-const getHeaders = () => ({
+// Global Request Headers Generator
+const getHeaders = (refererUrl) => ({
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept-Language': 'en-US,en;q=0.9'
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Referer': refererUrl || 'https://google.com'
 });
 
 // ==========================================
-// 1. ANIME SALT EXTRACTOR LOGIC
+// 1. EXTRACTOR HELPER LOGICS
 // ==========================================
 
 const searchAnimeSalt = async (query) => {
     try {
-        const { data } = await axios.get(`${ANIMESALT_BASE}/?s=${encodeURIComponent(query)}`, { headers: { ...getHeaders(), 'Referer': ANIMESALT_BASE } });
+        const { data } = await axios.get(`${ANIMESALT_BASE}/?s=${encodeURIComponent(query)}`, { headers: getHeaders(ANIMESALT_BASE) });
         const $ = cheerio.load(data);
         const results = [];
         $('ul.post-lst li').each((index, element) => {
@@ -41,13 +43,9 @@ const searchAnimeSalt = async (query) => {
     } catch { return []; }
 };
 
-// ==========================================
-// 2. TOON STREAM EXTRACTOR LOGIC
-// ==========================================
-
 const searchToonStream = async (query) => {
     try {
-        const { data } = await axios.get(`${TOONSTREAM_BASE}/s?q=${encodeURIComponent(query)}`, { headers: { ...getHeaders(), 'Referer': TOONSTREAM_BASE } });
+        const { data } = await axios.get(`${TOONSTREAM_BASE}/s?q=${encodeURIComponent(query)}`, { headers: getHeaders(TOONSTREAM_BASE) });
         const $ = cheerio.load(data);
         const results = [];
         $('ul.post-lst li').each((index, element) => {
@@ -69,10 +67,19 @@ const searchToonStream = async (query) => {
 };
 
 // ==========================================
-// API ENDPOINTS
+// 2. EXPRESS ROUTES / ENDPOINTS
 // ==========================================
 
-// 1. COMBINED SEARCH (Search on both in one request)
+// HOME STATUS ENDPOINT
+app.get('/', (req, res) => {
+    res.json({
+        status: "Active",
+        message: "FetchStream Scraper API is running.",
+        sources: [ "AnimeSalt", "ToonStream" ]
+    });
+});
+
+// A. COMBINED SEARCH (Queries both platforms parallelly)
 app.get('/search', async (req, res) => {
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -89,7 +96,7 @@ app.get('/search', async (req, res) => {
     });
 });
 
-// 2. DEDICATED ANIME SALT ENDPOINTS
+// B. DEDICATED ANIME SALT ENDPOINTS
 app.get('/animesalt/search', async (req, res) => {
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: "Query 'q' is required" });
@@ -102,7 +109,7 @@ app.get('/animesalt/episodes', async (req, res) => {
     if (!pageUrl) return res.status(400).json({ error: "URL is required" });
 
     try {
-        const { data } = await axios.get(pageUrl, { headers: getHeaders() });
+        const { data } = await axios.get(pageUrl, { headers: getHeaders(ANIMESALT_BASE) });
         const $ = cheerio.load(data);
         const episodes = [];
         const seasons = [];
@@ -134,7 +141,7 @@ app.get('/animesalt/streams', async (req, res) => {
     if (!epUrl) return res.status(400).json({ error: "URL is required" });
 
     try {
-        const { data } = await axios.get(epUrl, { headers: getHeaders() });
+        const { data } = await axios.get(epUrl, { headers: getHeaders(ANIMESALT_BASE) });
         const $ = cheerio.load(data);
         const streamSources = [];
 
@@ -167,7 +174,7 @@ app.get('/animesalt/streams', async (req, res) => {
     }
 });
 
-// 3. DEDICATED TOON STREAM ENDPOINTS
+// C. DEDICATED TOON STREAM ENDPOINTS
 app.get('/toonstream/search', async (req, res) => {
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: "Query 'q' is required" });
@@ -180,12 +187,11 @@ app.get('/toonstream/episodes', async (req, res) => {
     if (!pageUrl) return res.status(400).json({ error: "URL is required" });
 
     try {
-        const { data } = await axios.get(pageUrl, { headers: getHeaders() });
+        const { data } = await axios.get(pageUrl, { headers: getHeaders(TOONSTREAM_BASE) });
         const $ = cheerio.load(data);
         const episodes = [];
         const seasons = [];
 
-        // Seasons extraction (standard to Torofilm layout)
         $('.season-btn').each((i, el) => {
             const name = $(el).text().trim();
             const seasonNum = $(el).attr('data-season');
@@ -215,12 +221,12 @@ app.get('/toonstream/streams', async (req, res) => {
     if (!epUrl) return res.status(400).json({ error: "URL is required" });
 
     try {
-        const { data } = await axios.get(epUrl, { headers: getHeaders() });
+        const { data } = await axios.get(epUrl, { headers: getHeaders(TOONSTREAM_BASE) });
         const $ = cheerio.load(data);
         const streamSources = [];
         const downloadSources = [];
 
-        // A. Extract Embedded Streams (from Iframe/Video tabs map)
+        // Map server buttons to options
         const serverMap = {};
         $('.video-options .aa-tbs-video li').each((i, el) => {
             const optionId = $(el).find('a.btn').attr('href');
@@ -230,6 +236,7 @@ app.get('/toonstream/streams', async (req, res) => {
             }
         });
 
+        // Parse Embedded Iframe Streams
         $('.video-player .video').each((i, el) => {
             const id = $(el).attr('id');
             let src = $(el).find('iframe').attr('src') || $(el).find('iframe').attr('data-src');
@@ -246,7 +253,7 @@ app.get('/toonstream/streams', async (req, res) => {
             });
         });
 
-        // B. Extract Cyberpunk Modal Direct Download Links (Bonus!)
+        // Parse Direct High-Speed Download Mirrors (from Cyberpunk Modal)
         $('.cyber-modal .links-list .link-row').each((i, el) => {
             const serverName = $(el).find('.server-name').text().trim();
             const downloadLink = $(el).find('a.download-btn').attr('href');
@@ -267,6 +274,48 @@ app.get('/toonstream/streams', async (req, res) => {
     }
 });
 
+// D. TOONSTREAM EMBED AD-BYPASSER (Bypasses transparent overlay ads)
+app.get('/toonstream/bypass-embed', async (req, res) => {
+    const embedUrl = req.query.url;
+    if (!embedUrl) return res.status(400).json({ error: "URL parameter 'url' is required (e.g. /toonstream/bypass-embed?url=https://toon-stream.site/embed/1de87fde2c7f3da1)" });
+
+    try {
+        const { data } = await axios.get(embedUrl, { headers: getHeaders(TOONSTREAM_BASE) });
+        const $ = cheerio.load(data);
+        
+        // Find nested standard iframes inside the embed site (often the real raw player)
+        const nestedIframe = $('iframe').attr('src') || $('iframe').attr('data-src');
+
+        // Check inside JS blocks for raw streaming links (e.g. direct .m3u8 or .mp4)
+        let directVideoUrl = null;
+        $('script').each((i, el) => {
+            const scriptContent = $(el).html();
+            if (scriptContent) {
+                const m3u8Match = scriptContent.match(/(https?:\/\/[^\s"'`]+\.m3u8[^\s"'`]*)/i);
+                const mp4Match = scriptContent.match(/(https?:\/\/[^\s"'`]+\.mp4[^\s"'`]*)/i);
+                
+                if (m3u8Match) {
+                    directVideoUrl = m3u8Match[1].replace(/\\/g, '');
+                } else if (mp4Match) {
+                    directVideoUrl = mp4Match[1].replace(/\\/g, '');
+                }
+            }
+        });
+
+        res.json({
+            bypassed: true,
+            original_embed_url: embedUrl,
+            extracted_player_iframe: nestedIframe || null,
+            direct_stream_file: directVideoUrl || null,
+            tip: "Use the 'extracted_player_iframe' or direct file inside your apps to block clickable popup advertisements."
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: "Failed to resolve embed page", details: err.message });
+    }
+});
+
+// Listen Port (For Local Environment)
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 }
