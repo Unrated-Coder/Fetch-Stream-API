@@ -19,7 +19,7 @@ const getHeaders = (refererUrl) => ({
 });
 
 // ==========================================
-// 1. EXTRACTOR HELPER LOGICS
+// 1. EXTRACTOR HELPER LOGICS & BYPASSER
 // ==========================================
 
 const searchAnimeSalt = async (query) => {
@@ -64,6 +64,43 @@ const searchToonStream = async (query) => {
         });
         return results;
     } catch { return []; }
+};
+
+// Automatic Ad-Bypasser for ToonStream Embed Players
+const resolveEmbedUrl = async (embedUrl) => {
+    try {
+        const { data } = await axios.get(embedUrl, { 
+            headers: getHeaders(TOONSTREAM_BASE),
+            timeout: 3500 // Quick timeout to keep API fast on serverless functions
+        });
+        const $ = cheerio.load(data);
+        
+        // Check for nested raw player iframe
+        const nestedIframe = $('iframe').attr('src') || $('iframe').attr('data-src');
+        if (nestedIframe) {
+            return nestedIframe;
+        }
+
+        // Check for direct stream variables (.m3u8 / .mp4) in JavaScript files
+        let directVideoUrl = null;
+        $('script').each((i, el) => {
+            const scriptContent = $(el).html();
+            if (scriptContent) {
+                const m3u8Match = scriptContent.match(/(https?:\/\/[^\s"'`]+\.m3u8[^\s"'`]*)/i);
+                const mp4Match = scriptContent.match(/(https?:\/\/[^\s"'`]+\.mp4[^\s"'`]*)/i);
+                
+                if (m3u8Match) {
+                    directVideoUrl = m3u8Match[1].replace(/\\/g, '');
+                } else if (mp4Match) {
+                    directVideoUrl = mp4Match[1].replace(/\\/g, '');
+                }
+            }
+        });
+
+        return directVideoUrl || embedUrl; // Return direct stream file or fallback to embed Url
+    } catch (err) {
+        return embedUrl; // Fallback if embed call fails
+    }
 };
 
 // ==========================================
@@ -223,7 +260,7 @@ app.get('/toonstream/streams', async (req, res) => {
     try {
         const { data } = await axios.get(epUrl, { headers: getHeaders(TOONSTREAM_BASE) });
         const $ = cheerio.load(data);
-        const streamSources = [];
+        const rawStreams = [];
         const downloadSources = [];
 
         // Map server buttons to options
@@ -236,7 +273,7 @@ app.get('/toonstream/streams', async (req, res) => {
             }
         });
 
-        // Parse Embedded Iframe Streams
+        // Parse and extract Raw Embed link options
         $('.video-player .video').each((i, el) => {
             const id = $(el).attr('id');
             let src = $(el).find('iframe').attr('src') || $(el).find('iframe').attr('data-src');
@@ -247,11 +284,27 @@ app.get('/toonstream/streams', async (req, res) => {
             }
 
             const serverName = serverMap[id] || `Server ${i + 1}`;
-            streamSources.push({
-                server: serverName,
-                link: src
-            });
+            rawStreams.push({ serverName, link: src });
         });
+
+        // Automatically resolve and bypass /embed/ ad-layers parallelly
+        const resolvedStreams = await Promise.all(
+            rawStreams.map(async (stream) => {
+                if (stream.link.includes('/embed/')) {
+                    const bypassedLink = await resolveEmbedUrl(stream.link);
+                    return {
+                        server: stream.serverName,
+                        link: bypassedLink,
+                        is_bypassed: bypassedLink !== stream.link
+                    };
+                }
+                return {
+                    server: stream.serverName,
+                    link: stream.link,
+                    is_bypassed: false
+                };
+            })
+        );
 
         // Parse Direct High-Speed Download Mirrors (from Cyberpunk Modal)
         $('.cyber-modal .links-list .link-row').each((i, el) => {
@@ -266,52 +319,11 @@ app.get('/toonstream/streams', async (req, res) => {
         });
 
         res.json({
-            streams: streamSources,
+            streams: resolvedStreams,
             downloads: downloadSources
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to load streams", details: err.message });
-    }
-});
-
-// D. TOONSTREAM EMBED AD-BYPASSER (Bypasses transparent overlay ads)
-app.get('/toonstream/bypass-embed', async (req, res) => {
-    const embedUrl = req.query.url;
-    if (!embedUrl) return res.status(400).json({ error: "URL parameter 'url' is required (e.g. /toonstream/bypass-embed?url=https://toon-stream.site/embed/1de87fde2c7f3da1)" });
-
-    try {
-        const { data } = await axios.get(embedUrl, { headers: getHeaders(TOONSTREAM_BASE) });
-        const $ = cheerio.load(data);
-        
-        // Find nested standard iframes inside the embed site (often the real raw player)
-        const nestedIframe = $('iframe').attr('src') || $('iframe').attr('data-src');
-
-        // Check inside JS blocks for raw streaming links (e.g. direct .m3u8 or .mp4)
-        let directVideoUrl = null;
-        $('script').each((i, el) => {
-            const scriptContent = $(el).html();
-            if (scriptContent) {
-                const m3u8Match = scriptContent.match(/(https?:\/\/[^\s"'`]+\.m3u8[^\s"'`]*)/i);
-                const mp4Match = scriptContent.match(/(https?:\/\/[^\s"'`]+\.mp4[^\s"'`]*)/i);
-                
-                if (m3u8Match) {
-                    directVideoUrl = m3u8Match[1].replace(/\\/g, '');
-                } else if (mp4Match) {
-                    directVideoUrl = mp4Match[1].replace(/\\/g, '');
-                }
-            }
-        });
-
-        res.json({
-            bypassed: true,
-            original_embed_url: embedUrl,
-            extracted_player_iframe: nestedIframe || null,
-            direct_stream_file: directVideoUrl || null,
-            tip: "Use the 'extracted_player_iframe' or direct file inside your apps to block clickable popup advertisements."
-        });
-
-    } catch (err) {
-        res.status(500).json({ error: "Failed to resolve embed page", details: err.message });
     }
 });
 
