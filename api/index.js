@@ -7,9 +7,10 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Target Domain Configurations
+// Target Configurations
 const ANIMESALT_BASE = "https://animesalt.ac";
 const TOONSTREAM_BASE = "https://toon-stream.site";
+const TMDB_API_KEY = "ed9311c3613b06f414be99abaec5dd86";
 
 // Global Request Headers Generator
 const getHeaders = (refererUrl) => ({
@@ -71,17 +72,15 @@ const resolveEmbedUrl = async (embedUrl) => {
     try {
         const { data } = await axios.get(embedUrl, { 
             headers: getHeaders(TOONSTREAM_BASE),
-            timeout: 3500 // Quick timeout to keep API fast on serverless functions
+            timeout: 3500 
         });
         const $ = cheerio.load(data);
         
-        // Check for nested raw player iframe
         const nestedIframe = $('iframe').attr('src') || $('iframe').attr('data-src');
         if (nestedIframe) {
             return nestedIframe;
         }
 
-        // Check for direct stream variables (.m3u8 / .mp4) in JavaScript files
         let directVideoUrl = null;
         $('script').each((i, el) => {
             const scriptContent = $(el).html();
@@ -97,9 +96,9 @@ const resolveEmbedUrl = async (embedUrl) => {
             }
         });
 
-        return directVideoUrl || embedUrl; // Return direct stream file or fallback to embed Url
+        return directVideoUrl || embedUrl;
     } catch (err) {
-        return embedUrl; // Fallback if embed call fails
+        return embedUrl;
     }
 };
 
@@ -116,7 +115,7 @@ app.get('/', (req, res) => {
     });
 });
 
-// A. COMBINED SEARCH (Queries both platforms parallelly)
+// A. COMBINED SEARCH
 app.get('/search', async (req, res) => {
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -164,7 +163,16 @@ app.get('/animesalt/episodes', async (req, res) => {
             let link = $(element).find('a.lnk-blk').attr('href');
             if (link && !link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
 
-            if (link) episodes.push({ epNum: epNum || (i + 1).toString(), title, link });
+            // Scraping episode thumbnail directly from HTML
+            let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
+            if (image && image.startsWith('//')) image = 'https:' + image;
+
+            if (link) episodes.push({ 
+                epNum: epNum || (i + 1).toString(), 
+                title, 
+                link,
+                image: image || null
+            });
         });
 
         res.json({ seasons, episodes });
@@ -244,7 +252,16 @@ app.get('/toonstream/episodes', async (req, res) => {
                 link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
             }
 
-            if (link) episodes.push({ epNum: epNum || (i + 1).toString(), title, link });
+            // Scraping episode thumbnail directly from HTML
+            let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
+            if (image && image.startsWith('//')) image = 'https:' + image;
+
+            if (link) episodes.push({ 
+                epNum: epNum || (i + 1).toString(), 
+                title, 
+                link,
+                image: image || null
+            });
         });
 
         res.json({ seasons, episodes });
@@ -263,7 +280,6 @@ app.get('/toonstream/streams', async (req, res) => {
         const rawStreams = [];
         const downloadSources = [];
 
-        // Map server buttons to options
         const serverMap = {};
         $('.video-options .aa-tbs-video li').each((i, el) => {
             const optionId = $(el).find('a.btn').attr('href');
@@ -273,7 +289,6 @@ app.get('/toonstream/streams', async (req, res) => {
             }
         });
 
-        // Parse and extract Raw Embed link options
         $('.video-player .video').each((i, el) => {
             const id = $(el).attr('id');
             let src = $(el).find('iframe').attr('src') || $(el).find('iframe').attr('data-src');
@@ -287,7 +302,6 @@ app.get('/toonstream/streams', async (req, res) => {
             rawStreams.push({ serverName, link: src });
         });
 
-        // Automatically resolve and bypass /embed/ ad-layers parallelly
         const resolvedStreams = await Promise.all(
             rawStreams.map(async (stream) => {
                 if (stream.link.includes('/embed/')) {
@@ -306,7 +320,6 @@ app.get('/toonstream/streams', async (req, res) => {
             })
         );
 
-        // Parse Direct High-Speed Download Mirrors (from Cyberpunk Modal)
         $('.cyber-modal .links-list .link-row').each((i, el) => {
             const serverName = $(el).find('.server-name').text().trim();
             const downloadLink = $(el).find('a.download-btn').attr('href');
@@ -324,6 +337,53 @@ app.get('/toonstream/streams', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to load streams", details: err.message });
+    }
+});
+
+// D. TMDb OFFICIAL METADATA & EPISODE THUMBNAIL SERVICE
+app.get('/tmdb/episode-thumbnail', async (req, res) => {
+    const { title, season, episode } = req.query;
+    if (!title || !season || !episode) {
+        return res.status(400).json({ error: "Query parameters 'title', 'season', and 'episode' are required." });
+    }
+
+    try {
+        // Step 1: Search TV show on TMDB
+        const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`;
+        const searchRes = await axios.get(searchUrl);
+        const tvShow = searchRes.data.results[0];
+
+        if (!tvShow) {
+            return res.status(404).json({ error: `No show found on TMDB matching '${title}'` });
+        }
+
+        const tvId = tvShow.id;
+
+        // Step 2: Fetch specific episode details to get the 'still_path' (thumbnail screenshot)
+        const epUrl = `https://api.themoviedb.org/3/tv/${tvId}/season/${season}/episode/${episode}?api_key=${TMDB_API_KEY}`;
+        const epRes = await axios.get(epUrl);
+        const epData = epRes.data;
+
+        if (epData && epData.still_path) {
+            res.json({
+                found: true,
+                tv_id: tvId,
+                show_title: tvShow.name,
+                episode_name: epData.name || `Episode ${episode}`,
+                overview: epData.overview || "",
+                air_date: epData.air_date || null,
+                thumbnails: {
+                    w500: `https://image.tmdb.org/t/p/w500${epData.still_path}`,
+                    w780: `https://image.tmdb.org/t/p/w780${epData.still_path}`,
+                    original: `https://image.tmdb.org/t/p/original${epData.still_path}`
+                }
+            });
+        } else {
+            res.status(404).json({ error: "Episode found on TMDB, but no screenshot (still_path) exists for it." });
+        }
+
+    } catch (err) {
+        res.status(500).json({ error: "Failed to query TMDB API", details: err.message });
     }
 });
 
