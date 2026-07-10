@@ -1,15 +1,16 @@
 # FetchStream API
 
-A fast, lightweight, and serverless scraper API optimized for Vercel. It allows users to search, extract episode lists, and fetch embedded streaming/direct download links from **AnimeSalt** and **ToonStream**.
+A fast, lightweight, and serverless scraper API optimized for the Vercel serverless environment. This API allows developers to search, extract season-wise episode lists with thumbnails, and fetch ad-free streaming/direct download links from **AnimeSalt** and **ToonStream** [1].
 
-Because this API runs without heavy headless browsers (relying on lightweight HTTP requests and standard HTML parsing instead), it is fast, highly responsive, and fits easily inside Vercel's free serverless limitations.
+By utilizing concurrent asynchronous tasks (Promises) and background-resolving techniques, this API automatically bypasses click-ad overlays inside embed links and returns official HD metadata using **The Movie Database (TMDb)** [1].
 
 ---
 
-## 🏦 Targets Information
-*   **AnimeSalt** (`animesalt.ac`): An anime streaming discovery database using multiple embedded players and unique base64-encoded multi-language payloads.
-*   **ToonStream** (`toon-stream.site`): A popular index of cartoon and anime series dubbed in regional languages (Hindi, Tamil, Telugu, etc.).
-*   **Core Engine**: Node.js + Express + Axios + Cheerio.
+## 🏦 Targets Overview
+*   **AnimeSalt** (`animesalt.ac`): An anime streaming indexing platform featuring standard players and Base64-encoded localized audio streams.
+*   **ToonStream** (`toon-stream.site`): A regional cartoon and anime provider.
+*   **TMDb API**: Integrates official movie database metadata and high-definition episode screenshots [1].
+*   **Tech Stack**: Node.js + Express + Axios + Cheerio.
 
 ---
 
@@ -23,12 +24,12 @@ https://fetch-stream.vercel.app
 ## 🔌 API Endpoints Reference
 
 ### 1. Unified Search (Multi-Site)
-Searches both AnimeSalt and ToonStream concurrently in a single API call and merges the results.
+Searches both AnimeSalt and ToonStream concurrently in a single request and merges the results into a single list.
 
 *   **Endpoint**: `/search`
 *   **Method**: `GET`
 *   **Query Parameters**:
-    *   `q` (String, Required) - The search query (e.g., `Naruto`, `Chainsaw Man`).
+    *   `q` (String, Required) - The search query (e.g., `Boruto`, `Chainsaw Man`).
 *   **Sample Request**:
     ```text
     GET /search?q=Boruto
@@ -64,8 +65,8 @@ Searches both AnimeSalt and ToonStream concurrently in a single API call and mer
 *   **Query Parameters**: `q` (Required)
 *   **Sample Request**: `GET /animesalt/search?q=Naruto`
 
-#### B. Episodes List Extractor
-Extracts the loaded episode list and season metadata from a series page.
+#### B. Episodes List Extractor (With Native HTML Screenshots)
+Extracts the episode list and season metadata. This endpoint parses HTML to get direct episode thumbnail URLs.
 *   **Endpoint**: `/animesalt/episodes`
 *   **Query Parameters**:
     *   `url` (String, Required) - The series page URL scraped from search results.
@@ -83,42 +84,21 @@ Extracts the loaded episode list and season metadata from a series page.
         {
           "epNum": "1",
           "title": "Daemons of the Shadow Realm 1x1",
-          "link": "https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x1/"
+          "link": "https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x1/",
+          "image": "https://img.animesalt.ac/images-unified/thumb_2308_s1e1.jpg"
         }
       ]
     }
     ```
 
 #### C. Stream Link Extractor
-Parses the player iframe data and automatically decodes Base64 payloads containing localized audio streams (Hindi, Tamil, Telugu, Japanese, etc.).
+Parses player details and automatically decodes Base64 payloads containing localized audio streams (Hindi, Tamil, Telugu, Japanese, etc.).
 *   **Endpoint**: `/animesalt/streams`
 *   **Query Parameters**:
     *   `url` (String, Required) - The episode page URL.
 *   **Sample Request**:
     ```text
     GET /animesalt/streams?url=https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x6/
-    ```
-*   **Sample JSON Response**:
-    ```json
-    {
-      "streams": [
-        {
-          "server": "playX",
-          "language": "Default",
-          "link": "https://as-cdn21.top/video/4c5bc9874d7876f9b7b6959d3c555f45"
-        },
-        {
-          "server": "Abyss (Multi-Lang)",
-          "language": "Hindi",
-          "link": "https://short.icu/wNdWRnHRN"
-        },
-        {
-          "server": "Abyss (Multi-Lang)",
-          "language": "Japanese",
-          "link": "https://short.icu/Ju5_XKFCw"
-        }
-      ]
-    }
     ```
 
 ---
@@ -130,7 +110,8 @@ Parses the player iframe data and automatically decodes Base64 payloads containi
 *   **Query Parameters**: `q` (Required)
 *   **Sample Request**: `GET /toonstream/search?q=Chainsaw`
 
-#### B. Episodes List Extractor
+#### B. Episodes List Extractor (With Native HTML Screenshots)
+Parses the episodes grid. This endpoint automatically extracts native TMDb-linked episode stills from the website structure.
 *   **Endpoint**: `/toonstream/episodes`
 *   **Query Parameters**:
     *   `url` (String, Required) - The series page URL.
@@ -138,9 +119,26 @@ Parses the player iframe data and automatically decodes Base64 payloads containi
     ```text
     GET /toonstream/episodes?url=https://toon-stream.site/series/chainsaw-man
     ```
+*   **Sample JSON Response**:
+    ```json
+    {
+      "seasons": [
+        { "name": "Season 1", "seasonNum": "1", "ajaxUrl": "/series/chainsaw-man/season/1" }
+      ],
+      "episodes": [
+        {
+          "epNum": "1x1",
+          "title": "S 1 | E 1",
+          "link": "https://toon-stream.site/episode/chainsaw-man-1x1/",
+          "image": "https://image.tmdb.org/t/p/w780/dDwTq0HNQGMCpEdVQQyksvJvUcP.jpg"
+        }
+      ]
+    }
+    ```
 
-#### C. Stream & Direct Downloads Extractor
-Extracts embedded web players and scrapes high-speed download mirrors (such as Ruby, GDMirror, and openx bypassers) from the platform's download layout.
+#### C. Stream & Direct Downloads Extractor (With Automated Ad-Bypassing)
+ToonStream embeds usually contain clickable ad overlays. This endpoint automatically visits those embed URLs in the background and resolves the actual underlying clean video link.
+
 *   **Endpoint**: `/toonstream/streams`
 *   **Query Parameters**:
     *   `url` (String, Required) - The ToonStream episode page URL.
@@ -154,11 +152,13 @@ Extracts embedded web players and scrapes high-speed download mirrors (such as R
       "streams": [
         {
           "server": "Short",
-          "link": "https://toon-stream.site/embed/81227690d56aef40"
+          "link": "https://toon-stream.site/embed/81227690d56aef40",
+          "is_bypassed": true
         },
         {
           "server": "Ruby",
-          "link": "https://toon-stream.site/embed/9ff2f80dcb7d2bf2"
+          "link": "https://raw-video-source-or-un-redirected-link.com/...",
+          "is_bypassed": true
         }
       ],
       "downloads": [
@@ -176,13 +176,45 @@ Extracts embedded web players and scrapes high-speed download mirrors (such as R
 
 ---
 
+### 4. Official TMDb Metadata & Thumbnail Service
+A fallback endpoint to fetch high-definition official episode screenshots (still-images) and metadata directly from TMDb databases using search titles [1].
+
+*   **Endpoint**: `/tmdb/episode-thumbnail`
+*   **Method**: `GET`
+*   **Query Parameters**:
+    *   `title` (String, Required) - Show title (e.g., `Chainsaw Man`).
+    *   `season` (Number, Required) - Season number.
+    *   `episode` (Number, Required) - Episode number.
+*   **Sample Request**:
+    ```text
+    GET /tmdb/episode-thumbnail?title=Chainsaw Man&season=1&episode=4
+    ```
+*   **Sample JSON Response**:
+    ```json
+    {
+      "found": true,
+      "tv_id": 114410,
+      "show_title": "Chainsaw Man",
+      "episode_name": "Rescue",
+      "overview": "Denji has a simple dream...",
+      "air_date": "2022-11-01",
+      "thumbnails": {
+        "w500": "https://image.tmdb.org/t/p/w500/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
+        "w780": "https://image.tmdb.org/t/p/w780/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
+        "original": "https://image.tmdb.org/t/p/original/78p3CwjbIbJv2MucbLWnvBtF34d.jpg"
+      }
+    }
+    ```
+
+---
+
 ## 🛠️ Local Development Setup
 
 To run this project locally on your machine, follow these steps:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/shinubo28always/fetch-stream.git
+   git clone https://github.com/<your-username>/fetch-stream.git
    cd fetch-stream
    ```
 
@@ -203,8 +235,8 @@ To run this project locally on your machine, follow these steps:
 
 This API is natively configured with `vercel.json` for serverless route handling.
 
-1. Install the Vercel CLI or link your repository directly to the **Vercel Dashboard**.
-2. Connect your GitHub repository.
+1. Connect your GitHub repository with the **Vercel Dashboard**.
+2. Select your repository and click "Deploy".
 3. Vercel will automatically read the root-level config files and execute deployment in seconds.
 
 ---
