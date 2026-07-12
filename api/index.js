@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Target Configurations
+// Target Domain Configurations
 const ANIMESALT_BASE = "https://animesalt.ac";
 const TOONSTREAM_BASE = "https://toon-stream.site";
 const TMDB_API_KEY = "ed9311c3613b06f414be99abaec5dd86";
@@ -19,6 +19,13 @@ const getHeaders = (refererUrl) => ({
     'Referer': refererUrl || 'https://google.com'
 });
 
+// Helper to determine if link is a movie or series
+const detectType = (link, classText) => {
+    if (link && link.includes('/movies/')) return 'movie';
+    if (classText && classText.includes('type-movies')) return 'movie';
+    return 'series';
+};
+
 // ==========================================
 // 1. EXTRACTOR HELPER LOGICS & BYPASSER
 // ==========================================
@@ -29,6 +36,7 @@ const searchAnimeSalt = async (query) => {
         const $ = cheerio.load(data);
         const results = [];
         $('ul.post-lst li').each((index, element) => {
+            const classText = $(element).attr('class') || '';
             const title = $(element).find('h2.entry-title').text().trim();
             let link = $(element).find('a.lnk-blk').attr('href');
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
@@ -36,8 +44,10 @@ const searchAnimeSalt = async (query) => {
             if (image && image.startsWith('//')) image = 'https:' + image;
             if (link && !link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
 
+            const type = detectType(link, classText);
+
             if (title && link) {
-                results.push({ title, link, image, source: 'AnimeSalt' });
+                results.push({ title, link, image, type, source: 'AnimeSalt' });
             }
         });
         return results;
@@ -50,6 +60,7 @@ const searchToonStream = async (query) => {
         const $ = cheerio.load(data);
         const results = [];
         $('ul.post-lst li').each((index, element) => {
+            const classText = $(element).attr('class') || '';
             const title = $(element).find('h2.entry-title').text().trim();
             let link = $(element).find('a.lnk-blk').attr('href');
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
@@ -59,8 +70,10 @@ const searchToonStream = async (query) => {
                 link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
             }
 
+            const type = detectType(link, classText);
+
             if (title && link) {
-                results.push({ title, link, image, source: 'ToonStream' });
+                results.push({ title, link, image, type, source: 'ToonStream' });
             }
         });
         return results;
@@ -72,7 +85,7 @@ const resolveEmbedUrl = async (embedUrl) => {
     try {
         const { data } = await axios.get(embedUrl, { 
             headers: getHeaders(TOONSTREAM_BASE),
-            timeout: 3500 
+            timeout: 3000 
         });
         const $ = cheerio.load(data);
         
@@ -115,7 +128,7 @@ app.get('/', (req, res) => {
     });
 });
 
-// A. COMBINED SEARCH
+// A. COMBINED SEARCH (Queries both platforms parallelly with type detection)
 app.get('/search', async (req, res) => {
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: "Query parameter 'q' is required" });
@@ -163,7 +176,6 @@ app.get('/animesalt/episodes', async (req, res) => {
             let link = $(element).find('a.lnk-blk').attr('href');
             if (link && !link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
 
-            // Scraping episode thumbnail directly from HTML
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
             if (image && image.startsWith('//')) image = 'https:' + image;
 
@@ -189,7 +201,17 @@ app.get('/animesalt/streams', async (req, res) => {
         const { data } = await axios.get(epUrl, { headers: getHeaders(ANIMESALT_BASE) });
         const $ = cheerio.load(data);
         const streamSources = [];
+        const downloadSources = [];
 
+        // 1. Scrape metadata & Poster/Backdrop (Auto-detected if it is a Movie or Episode)
+        const title = $('h1').text().trim();
+        let poster = $('.post-thumbnail img').attr('src') || $('.post-thumbnail img').attr('data-src') || $('.bd img[src*="tmdb.org"]').attr('src') || $('.bd img').first().attr('src');
+        let backdrop = $('.bghd img.TPostBg').attr('src') || $('.bghd img').attr('src') || $('.bghd img').attr('data-src');
+
+        if (poster && poster.startsWith('//')) poster = `https:${poster}`;
+        if (backdrop && backdrop.startsWith('//')) backdrop = `https:${backdrop}`;
+
+        // 2. Scrape Streaming Players
         $('#aa-options iframe').each((index, element) => {
             const src = $(element).attr('src') || $(element).attr('data-src');
             if (!src) return;
@@ -213,7 +235,31 @@ app.get('/animesalt/streams', async (req, res) => {
             }
         });
 
-        res.json({ streams: streamSources });
+        // 3. Scrape Download Table (If URL is a Movie details page on AnimeSalt)
+        $('#mdl-download .download-links table tbody tr').each((i, el) => {
+            const server = $(el).find('td').first().text().replace(/#\d+\s*/g, '').trim(); 
+            const lang = $(el).find('td:nth-child(2)').text().trim(); 
+            const quality = $(el).find('td:nth-child(3)').text().trim(); 
+            let link = $(el).find('a').attr('href');
+
+            if (link) {
+                if (link.startsWith('/')) link = `${ANIMESALT_BASE}${link}`;
+                downloadSources.push({
+                    server: server || 'Download',
+                    language: lang || 'Default',
+                    quality: quality || 'HD',
+                    link: link
+                });
+            }
+        });
+
+        res.json({ 
+            title: title || null,
+            poster_image: poster || null,
+            thumbnail_image: backdrop || null,
+            streams: streamSources,
+            downloads: downloadSources
+        });
     } catch (err) {
         res.status(500).json({ error: "Failed to load streams", details: err.message });
     }
@@ -252,7 +298,6 @@ app.get('/toonstream/episodes', async (req, res) => {
                 link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
             }
 
-            // Scraping episode thumbnail directly from HTML
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
             if (image && image.startsWith('//')) image = 'https:' + image;
 
@@ -280,6 +325,17 @@ app.get('/toonstream/streams', async (req, res) => {
         const rawStreams = [];
         const downloadSources = [];
 
+        // 1. Extra Metadata Extraction (Title, Poster & Background Wallpaper)
+        const title = $('h1.entry-title').text().trim();
+        let poster = $('.post-thumbnail img').attr('src') || $('.post-thumbnail img').attr('data-src');
+        let backdrop = $('.bghd img.TPostBg').attr('src') || $('.bghd img').attr('src') || $('.bghd img').attr('data-src');
+
+        if (poster && poster.startsWith('/')) poster = `${TOONSTREAM_BASE}${poster}`;
+        if (backdrop && backdrop.startsWith('/')) backdrop = `${TOONSTREAM_BASE}${backdrop}`;
+        if (backdrop && backdrop.startsWith('//')) backdrop = `https:${backdrop}`;
+        if (poster && poster.startsWith('//')) poster = `https:${poster}`;
+
+        // 2. Map server buttons to options
         const serverMap = {};
         $('.video-options .aa-tbs-video li').each((i, el) => {
             const optionId = $(el).find('a.btn').attr('href');
@@ -289,6 +345,7 @@ app.get('/toonstream/streams', async (req, res) => {
             }
         });
 
+        // 3. Parse and extract Raw Embed link options
         $('.video-player .video').each((i, el) => {
             const id = $(el).attr('id');
             let src = $(el).find('iframe').attr('src') || $(el).find('iframe').attr('data-src');
@@ -302,6 +359,7 @@ app.get('/toonstream/streams', async (req, res) => {
             rawStreams.push({ serverName, link: src });
         });
 
+        // 4. Automatically resolve and bypass /embed/ ad-layers parallelly
         const resolvedStreams = await Promise.all(
             rawStreams.map(async (stream) => {
                 if (stream.link.includes('/embed/')) {
@@ -320,6 +378,7 @@ app.get('/toonstream/streams', async (req, res) => {
             })
         );
 
+        // 5. Parse Direct High-Speed Download Mirrors (from Cyberpunk Modal)
         $('.cyber-modal .links-list .link-row').each((i, el) => {
             const serverName = $(el).find('.server-name').text().trim();
             const downloadLink = $(el).find('a.download-btn').attr('href');
@@ -332,6 +391,9 @@ app.get('/toonstream/streams', async (req, res) => {
         });
 
         res.json({
+            title: title || null,
+            poster_image: poster || null,
+            thumbnail_image: backdrop || null, // Episode screenshot still-image
             streams: resolvedStreams,
             downloads: downloadSources
         });
@@ -348,7 +410,6 @@ app.get('/tmdb/episode-thumbnail', async (req, res) => {
     }
 
     try {
-        // Step 1: Search TV show on TMDB
         const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`;
         const searchRes = await axios.get(searchUrl);
         const tvShow = searchRes.data.results[0];
@@ -359,7 +420,6 @@ app.get('/tmdb/episode-thumbnail', async (req, res) => {
 
         const tvId = tvShow.id;
 
-        // Step 2: Fetch specific episode details to get the 'still_path' (thumbnail screenshot)
         const epUrl = `https://api.themoviedb.org/3/tv/${tvId}/season/${season}/episode/${episode}?api_key=${TMDB_API_KEY}`;
         const epRes = await axios.get(epUrl);
         const epData = epRes.data;
