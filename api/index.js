@@ -10,14 +10,33 @@ app.use(express.json());
 // Target Domain Configurations
 const ANIMESALT_BASE = "https://animesalt.ac";
 const TOONSTREAM_BASE = "https://toon-stream.site";
-const TMDB_API_KEY = "ed9311c3613b06f414be99abaec5dd86";
+const TMDB_API_KEY = process.env.TMDB_API_KEY || "ed9311c3613b06f414be99abaec5dd86";
 
 // Global Request Headers Generator
 const getHeaders = (refererUrl) => ({
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
     'Referer': refererUrl || 'https://google.com'
 });
+
+// Helper function to handle external API / Scraper errors gracefully
+const handleScraperError = (res, err, contextMessage) => {
+    const statusCode = err.response ? err.response.status : 500;
+    let message = contextMessage;
+
+    if (statusCode === 404) {
+        message = "Target resource or page not found";
+    } else if (statusCode === 403) {
+        message = "Access blocked by target server (Cloudflare / WAF)";
+    }
+
+    return res.status(statusCode).json({
+        error: message,
+        upstream_status: statusCode,
+        details: err.message
+    });
+};
 
 // Helper to determine if link is a movie or series
 const detectType = (link, classText) => {
@@ -80,7 +99,7 @@ const searchToonStream = async (query) => {
     } catch { return []; }
 };
 
-// Automatic Ad-Bypasser for ToonStream Embed Players
+// Automatic Resolver for Embed Players
 const resolveEmbedUrl = async (embedUrl) => {
     try {
         const { data } = await axios.get(embedUrl, { 
@@ -189,7 +208,7 @@ app.get('/animesalt/episodes', async (req, res) => {
 
         res.json({ seasons, episodes });
     } catch (err) {
-        res.status(500).json({ error: "Failed to load episodes", details: err.message });
+        handleScraperError(res, err, "Failed to load episodes from AnimeSalt");
     }
 });
 
@@ -203,7 +222,7 @@ app.get('/animesalt/streams', async (req, res) => {
         const streamSources = [];
         const downloadSources = [];
 
-        // 1. Scrape metadata & Poster/Backdrop (Auto-detected if it is a Movie or Episode)
+        // 1. Scrape metadata & Poster/Backdrop
         const title = $('h1').text().trim();
         let poster = $('.post-thumbnail img').attr('src') || $('.post-thumbnail img').attr('data-src') || $('.bd img[src*="tmdb.org"]').attr('src') || $('.bd img').first().attr('src');
         let backdrop = $('.bghd img.TPostBg').attr('src') || $('.bghd img').attr('src') || $('.bghd img').attr('data-src');
@@ -235,7 +254,7 @@ app.get('/animesalt/streams', async (req, res) => {
             }
         });
 
-        // 3. Scrape Download Table (If URL is a Movie details page on AnimeSalt)
+        // 3. Scrape Download Table
         $('#mdl-download .download-links table tbody tr').each((i, el) => {
             const server = $(el).find('td').first().text().replace(/#\d+\s*/g, '').trim(); 
             const lang = $(el).find('td:nth-child(2)').text().trim(); 
@@ -261,7 +280,7 @@ app.get('/animesalt/streams', async (req, res) => {
             downloads: downloadSources
         });
     } catch (err) {
-        res.status(500).json({ error: "Failed to load streams", details: err.message });
+        handleScraperError(res, err, "Failed to load streams from AnimeSalt");
     }
 });
 
@@ -311,7 +330,7 @@ app.get('/toonstream/episodes', async (req, res) => {
 
         res.json({ seasons, episodes });
     } catch (err) {
-        res.status(500).json({ error: "Failed to load episodes", details: err.message });
+        handleScraperError(res, err, "Failed to load episodes from ToonStream");
     }
 });
 
@@ -325,7 +344,7 @@ app.get('/toonstream/streams', async (req, res) => {
         const rawStreams = [];
         const downloadSources = [];
 
-        // 1. Extra Metadata Extraction (Title, Poster & Background Wallpaper)
+        // 1. Metadata Extraction
         const title = $('h1.entry-title').text().trim();
         let poster = $('.post-thumbnail img').attr('src') || $('.post-thumbnail img').attr('data-src');
         let backdrop = $('.bghd img.TPostBg').attr('src') || $('.bghd img').attr('src') || $('.bghd img').attr('data-src');
@@ -345,7 +364,7 @@ app.get('/toonstream/streams', async (req, res) => {
             }
         });
 
-        // 3. Parse and extract Raw Embed link options
+        // 3. Parse Raw Embed links
         $('.video-player .video').each((i, el) => {
             const id = $(el).attr('id');
             let src = $(el).find('iframe').attr('src') || $(el).find('iframe').attr('data-src');
@@ -359,7 +378,7 @@ app.get('/toonstream/streams', async (req, res) => {
             rawStreams.push({ serverName, link: src });
         });
 
-        // 4. Automatically resolve and bypass /embed/ ad-layers parallelly
+        // 4. Resolve embeds
         const resolvedStreams = await Promise.all(
             rawStreams.map(async (stream) => {
                 if (stream.link.includes('/embed/')) {
@@ -378,7 +397,7 @@ app.get('/toonstream/streams', async (req, res) => {
             })
         );
 
-        // 5. Parse Direct High-Speed Download Mirrors (from Cyberpunk Modal)
+        // 5. Parse Downloads
         $('.cyber-modal .links-list .link-row').each((i, el) => {
             const serverName = $(el).find('.server-name').text().trim();
             const downloadLink = $(el).find('a.download-btn').attr('href');
@@ -393,12 +412,12 @@ app.get('/toonstream/streams', async (req, res) => {
         res.json({
             title: title || null,
             poster_image: poster || null,
-            thumbnail_image: backdrop || null, // Episode screenshot still-image
+            thumbnail_image: backdrop || null,
             streams: resolvedStreams,
             downloads: downloadSources
         });
     } catch (err) {
-        res.status(500).json({ error: "Failed to load streams", details: err.message });
+        handleScraperError(res, err, "Failed to load streams from ToonStream");
     }
 });
 
@@ -443,11 +462,11 @@ app.get('/tmdb/episode-thumbnail', async (req, res) => {
         }
 
     } catch (err) {
-        res.status(500).json({ error: "Failed to query TMDB API", details: err.message });
+        handleScraperError(res, err, "Failed to query TMDB API");
     }
 });
 
-// Listen Port (For Local Environment)
+// Listen Port
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 }
