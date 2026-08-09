@@ -20,19 +20,26 @@ const getHeaders = (refererUrl) => ({
     'Referer': refererUrl || 'https://google.com'
 });
 
-// Helper function to sanitize, fix trailing slashes, and handle special characters (%C3%A9, é, etc.)
+// Advanced URL Sanitizer (Handles Colons ':', Accents 'é', Trailing slashes, and avoids Double-Encoding)
 const fixUrl = (url) => {
     if (!url) return url;
     let cleanUrl = url.trim();
 
     try {
-        // Prevents double-encoding (%25C3%25A9) by decoding first, then safely encoding
-        cleanUrl = encodeURI(decodeURI(cleanUrl));
+        const parsed = new URL(cleanUrl);
+        let pathname = parsed.pathname;
+        
+        try { pathname = decodeURIComponent(pathname); } catch (e) {}
+        
+        // Safely encode each segment of the path (Encodes ':' as '%3A', accents, spaces, etc.)
+        pathname = pathname.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        
+        cleanUrl = `${parsed.origin}${pathname}${parsed.search}`;
     } catch (e) {
-        cleanUrl = encodeURI(cleanUrl);
+        try { cleanUrl = encodeURI(decodeURI(cleanUrl)); } catch (err) { cleanUrl = encodeURI(cleanUrl); }
     }
 
-    if (!cleanUrl.endsWith('/')) {
+    if (!cleanUrl.endsWith('/') && !cleanUrl.includes('?')) {
         cleanUrl += '/';
     }
     return cleanUrl;
