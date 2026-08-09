@@ -20,6 +20,24 @@ const getHeaders = (refererUrl) => ({
     'Referer': refererUrl || 'https://google.com'
 });
 
+// Helper function to sanitize, fix trailing slashes, and handle special characters (%C3%A9, é, etc.)
+const fixUrl = (url) => {
+    if (!url) return url;
+    let cleanUrl = url.trim();
+
+    try {
+        // Prevents double-encoding (%25C3%25A9) by decoding first, then safely encoding
+        cleanUrl = encodeURI(decodeURI(cleanUrl));
+    } catch (e) {
+        cleanUrl = encodeURI(cleanUrl);
+    }
+
+    if (!cleanUrl.endsWith('/')) {
+        cleanUrl += '/';
+    }
+    return cleanUrl;
+};
+
 // Helper function to handle external API / Scraper errors gracefully
 const handleScraperError = (res, err, contextMessage) => {
     const statusCode = err.response ? err.response.status : 500;
@@ -51,7 +69,10 @@ const detectType = (link, classText) => {
 
 const searchAnimeSalt = async (query) => {
     try {
-        const { data } = await axios.get(`${ANIMESALT_BASE}/?s=${encodeURIComponent(query)}`, { headers: getHeaders(ANIMESALT_BASE) });
+        const { data } = await axios.get(`${ANIMESALT_BASE}/?s=${encodeURIComponent(query)}`, { 
+            headers: getHeaders(ANIMESALT_BASE),
+            maxRedirects: 5
+        });
         const $ = cheerio.load(data);
         const results = [];
         $('ul.post-lst li').each((index, element) => {
@@ -61,7 +82,10 @@ const searchAnimeSalt = async (query) => {
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
 
             if (image && image.startsWith('//')) image = 'https:' + image;
-            if (link && !link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
+            if (link) {
+                if (!link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
+                link = fixUrl(link);
+            }
 
             const type = detectType(link, classText);
 
@@ -75,7 +99,10 @@ const searchAnimeSalt = async (query) => {
 
 const searchToonStream = async (query) => {
     try {
-        const { data } = await axios.get(`${TOONSTREAM_BASE}/s?q=${encodeURIComponent(query)}`, { headers: getHeaders(TOONSTREAM_BASE) });
+        const { data } = await axios.get(`${TOONSTREAM_BASE}/s?q=${encodeURIComponent(query)}`, { 
+            headers: getHeaders(TOONSTREAM_BASE),
+            maxRedirects: 5
+        });
         const $ = cheerio.load(data);
         const results = [];
         $('ul.post-lst li').each((index, element) => {
@@ -85,8 +112,11 @@ const searchToonStream = async (query) => {
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
 
             if (image && image.startsWith('//')) image = 'https:' + image;
-            if (link && !link.startsWith('http')) {
-                link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
+            if (link) {
+                if (!link.startsWith('http')) {
+                    link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
+                }
+                link = fixUrl(link);
             }
 
             const type = detectType(link, classText);
@@ -104,7 +134,8 @@ const resolveEmbedUrl = async (embedUrl) => {
     try {
         const { data } = await axios.get(embedUrl, { 
             headers: getHeaders(TOONSTREAM_BASE),
-            timeout: 3000 
+            timeout: 3000,
+            maxRedirects: 5 
         });
         const $ = cheerio.load(data);
         
@@ -173,11 +204,16 @@ app.get('/animesalt/search', async (req, res) => {
 });
 
 app.get('/animesalt/episodes', async (req, res) => {
-    const pageUrl = req.query.url;
-    if (!pageUrl) return res.status(400).json({ error: "URL is required" });
+    const rawUrl = req.query.url;
+    if (!rawUrl) return res.status(400).json({ error: "URL is required" });
+
+    const pageUrl = fixUrl(rawUrl);
 
     try {
-        const { data } = await axios.get(pageUrl, { headers: getHeaders(ANIMESALT_BASE) });
+        const { data } = await axios.get(pageUrl, { 
+            headers: getHeaders(ANIMESALT_BASE),
+            maxRedirects: 5 
+        });
         const $ = cheerio.load(data);
         const episodes = [];
         const seasons = [];
@@ -193,7 +229,11 @@ app.get('/animesalt/episodes', async (req, res) => {
             const epNum = $(element).find('.num-epi').text().trim();
             const title = $(element).find('h2.entry-title').text().trim();
             let link = $(element).find('a.lnk-blk').attr('href');
-            if (link && !link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
+            
+            if (link) {
+                if (!link.startsWith('http')) link = `${ANIMESALT_BASE}${link}`;
+                link = fixUrl(link);
+            }
 
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
             if (image && image.startsWith('//')) image = 'https:' + image;
@@ -213,11 +253,16 @@ app.get('/animesalt/episodes', async (req, res) => {
 });
 
 app.get('/animesalt/streams', async (req, res) => {
-    const epUrl = req.query.url;
-    if (!epUrl) return res.status(400).json({ error: "URL is required" });
+    const rawUrl = req.query.url;
+    if (!rawUrl) return res.status(400).json({ error: "URL is required" });
+
+    const epUrl = fixUrl(rawUrl);
 
     try {
-        const { data } = await axios.get(epUrl, { headers: getHeaders(ANIMESALT_BASE) });
+        const { data } = await axios.get(epUrl, { 
+            headers: getHeaders(ANIMESALT_BASE),
+            maxRedirects: 5 
+        });
         const $ = cheerio.load(data);
         const streamSources = [];
         const downloadSources = [];
@@ -267,7 +312,7 @@ app.get('/animesalt/streams', async (req, res) => {
                     server: server || 'Download',
                     language: lang || 'Default',
                     quality: quality || 'HD',
-                    link: link
+                    link: fixUrl(link)
                 });
             }
         });
@@ -293,11 +338,16 @@ app.get('/toonstream/search', async (req, res) => {
 });
 
 app.get('/toonstream/episodes', async (req, res) => {
-    const pageUrl = req.query.url;
-    if (!pageUrl) return res.status(400).json({ error: "URL is required" });
+    const rawUrl = req.query.url;
+    if (!rawUrl) return res.status(400).json({ error: "URL is required" });
+
+    const pageUrl = fixUrl(rawUrl);
 
     try {
-        const { data } = await axios.get(pageUrl, { headers: getHeaders(TOONSTREAM_BASE) });
+        const { data } = await axios.get(pageUrl, { 
+            headers: getHeaders(TOONSTREAM_BASE),
+            maxRedirects: 5 
+        });
         const $ = cheerio.load(data);
         const episodes = [];
         const seasons = [];
@@ -313,8 +363,12 @@ app.get('/toonstream/episodes', async (req, res) => {
             const epNum = $(element).find('.num-epi').text().trim();
             const title = $(element).find('h5.entry-title1').text().trim();
             let link = $(element).find('a.lnk-blk').attr('href');
-            if (link && !link.startsWith('http')) {
-                link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
+            
+            if (link) {
+                if (!link.startsWith('http')) {
+                    link = `${TOONSTREAM_BASE}${link.startsWith('/') ? '' : '/'}${link}`;
+                }
+                link = fixUrl(link);
             }
 
             let image = $(element).find('img').attr('data-src') || $(element).find('img').attr('src');
@@ -335,11 +389,16 @@ app.get('/toonstream/episodes', async (req, res) => {
 });
 
 app.get('/toonstream/streams', async (req, res) => {
-    const epUrl = req.query.url;
-    if (!epUrl) return res.status(400).json({ error: "URL is required" });
+    const rawUrl = req.query.url;
+    if (!rawUrl) return res.status(400).json({ error: "URL is required" });
+
+    const epUrl = fixUrl(rawUrl);
 
     try {
-        const { data } = await axios.get(epUrl, { headers: getHeaders(TOONSTREAM_BASE) });
+        const { data } = await axios.get(epUrl, { 
+            headers: getHeaders(TOONSTREAM_BASE),
+            maxRedirects: 5 
+        });
         const $ = cheerio.load(data);
         const rawStreams = [];
         const downloadSources = [];
