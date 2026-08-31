@@ -1,246 +1,245 @@
-# FetchStream API
+<div align="center">
 
-A fast, lightweight, and serverless scraper API optimized for the Vercel serverless environment. This API allows developers to search, extract season-wise episode lists with thumbnails, and fetch ad-free streaming/direct download links from **AnimeSalt** and **ToonStream** [1].
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f7ff,50:7928ca,100:ff007f&height=260&section=header&text=FETCHSTREAM%20API&fontSize=48&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Serverless%20Scraper%20%7C%20Ad-Bypasser%20%7C%20TMDb%20Engine&descAlignY=60&descSize=18" width="100%"/></a>
 
-By utilizing concurrent asynchronous tasks (Promises) and background-resolving techniques, this API automatically bypasses click-ad overlays inside embed links and returns official HD metadata using **The Movie Database (TMDb)** [1].
+<a href="https://t.me/Unrated_Coder">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=24&duration=2500&pause=800&color=00F7FF&center=true&vCenter=true&width=750&lines=FETCHSTREAM+API+%E2%84%A2;A+Fast+Serverless+Scraper+for+Anime+and+Toons;Bypasses+Ads+Automatically;Powered+by+Unrated+Coder" alt="Typing Animation" />
+</a>
 
----
+<p align="center">
+  <a href="https://fetch-stream.vercel.app">
+    <img src="https://img.shields.io/badge/API-Live_Base_URL-00C853?style=for-the-badge&logo=vercel&logoColor=white" />
+  </a>
+  <a href="https://t.me/Unrated_Coder">
+    <img src="https://img.shields.io/badge/Telegram-Unrated_Coder-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" />
+  </a>
+  <a href="#!"><img src="https://img.shields.io/badge/Status-Active_Production-00f7ff?style=for-the-badge" /></a>
+  <a href="#!"><img src="https://img.shields.io/badge/License-MIT-FF6B00?style=for-the-badge" /></a>
+</p>
 
-## 🏦 Targets Overview
-*   **AnimeSalt** (`animesalt.ac`): An anime streaming indexing platform featuring standard players and Base64-encoded localized audio streams.
-*   **ToonStream** (`toon-stream.site`): A regional cartoon and anime provider.
-*   **TMDb API**: Integrates official movie database metadata and high-definition episode screenshots [1].
-*   **Tech Stack**: Node.js + Express + Axios + Cheerio.
+</div>
 
----
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
 
-## 🚀 Live API Base URL
+## 📖 About FetchStream API
+
+> [!NOTE]
+> **FetchStream API** is an advanced, high-performance open-source microservice built by **Unrated Coder ™** to query, extract, and normalize streaming assets from various indexing platforms seamlessly inside a Vercel serverless environment.
+
+<div align="center">
+  <a href="#!">
+    <img src="https://readme-typing-svg.demolab.com?font=Space+Mono&weight=700&size=22&duration=2000&pause=500&color=7928CA&center=true&vCenter=true&width=600&lines=%5B+BYPASSES+CLICK-ADS+%5D;%5B+DECODES+BASE64+STREAMS+%5D;%5B+TMDB+HD+METADATA+%5D" alt="Subtext Animation" />
+  </a>
+</div>
+
+### Core System Features
+- **Concurrent Multi-Site Aggregation:** Queries AnimeSalt and ToonStream simultaneously using asynchronous promise resolutions.
+- **Automated Ad-Bypasser:** Crawls hidden iframe wrappers and bypasses click-ad overlays to pull pure source streams.
+- **Base64 Audio Unpacking:** Automatically decodes localized audio track configurations (Hindi, Tamil, Telugu, Japanese).
+- **Rich TMDb Integration:** Maps records with high-definition screenshots, official overviews, and air-dates [1].
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+## 🎯 Target Platforms & Ecosystem
+
+> [!TIP]
+> **AnimeSalt (`animesalt.ac`)** > Deep series indexer, season mapper, and Base64 localized stream payloads [1].
+
+> [!IMPORTANT]
+> **ToonStream (`toon-stream.site`)** > Cartoon/anime database featuring automated background verification and ad-wall stripping [1].
+
+> [!CAUTION]
+> **TMDb Database (`themoviedb.org`)** > Official promotional art engine providing crisp backdrop images and episode titles [1].
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+## 🚀 Live Production Endpoint
+
 ```text
 https://fetch-stream.vercel.app
 ```
 
----
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
 
-## 🔌 API Endpoints Reference
+## 🔌 Comprehensive API Endpoints Reference
 
-### 1. Unified Search (Multi-Site)
-Searches both AnimeSalt and ToonStream concurrently in a single request and merges the results into a single list.
+### 1. Unified Multi-Site Search
+Queries all integrated target platforms concurrently in a single thread, normalizing divergent search results into a unified payload format.
 
-*   **Endpoint**: `/search`
-*   **Method**: `GET`
-*   **Query Parameters**:
-    *   `q` (String, Required) - The search query (e.g., `Boruto`, `Chainsaw Man`).
-*   **Sample Request**:
-    ```text
-    GET /search?q=Boruto
-    ```
-*   **Sample JSON Response**:
-    ```json
+* **Endpoint:** `GET /search`
+* **Query Parameter:** `q` *(String, Required)* — Target search keyword (e.g., `Boruto`, `Chainsaw Man`).
+
+#### 📥 Sample Request
+```http
+GET https://fetch-stream.vercel.app/search?q=Boruto
+```
+
+#### 📤 Sample JSON Response (`200 OK`)
+```json
+{
+  "query": "Boruto",
+  "total": 2,
+  "results": [
     {
-      "query": "Boruto",
-      "total": 2,
-      "results": [
-        {
-          "title": "Boruto: Naruto Next Generations",
-          "link": "https://animesalt.ac/series/boruto-naruto-next-generations/",
-          "image": "https://image.tmdb.org/t/p/w500/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
-          "source": "AnimeSalt"
-        },
-        {
-          "title": "Boruto: Naruto Next Generations",
-          "link": "https://toon-stream.site/series/boruto-naruto-next-generations",
-          "image": "https://image.tmdb.org/t/p/w780/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
-          "source": "ToonStream"
-        }
-      ]
-    }
-    ```
-
----
-
-### 2. Dedicated AnimeSalt Endpoints
-
-#### A. Dedicated Search
-*   **Endpoint**: `/animesalt/search`
-*   **Query Parameters**: `q` (Required)
-*   **Sample Request**: `GET /animesalt/search?q=Naruto`
-
-#### B. Episodes List Extractor (With Native HTML Screenshots)
-Extracts the episode list and season metadata. This endpoint parses HTML to get direct episode thumbnail URLs.
-*   **Endpoint**: `/animesalt/episodes`
-*   **Query Parameters**:
-    *   `url` (String, Required) - The series page URL scraped from search results.
-*   **Sample Request**:
-    ```text
-    GET /animesalt/episodes?url=https://animesalt.ac/series/daemons-of-the-shadow-realm/
-    ```
-*   **Sample JSON Response**:
-    ```json
+      "title": "Boruto: Naruto Next Generations",
+      "link": "https://animesalt.ac/series/boruto-naruto-next-generations/",
+      "image": "https://image.tmdb.org/t/p/w500/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
+      "source": "AnimeSalt"
+    },
     {
-      "seasons": [
-        { "name": "Season 1 • 1-11 (11)", "seasonNum": "1", "postId": "2308" }
-      ],
-      "episodes": [
-        {
-          "epNum": "1",
-          "title": "Daemons of the Shadow Realm 1x1",
-          "link": "https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x1/",
-          "image": "https://img.animesalt.ac/images-unified/thumb_2308_s1e1.jpg"
-        }
-      ]
+      "title": "Boruto: Naruto Next Generations",
+      "link": "https://toon-stream.site/series/boruto-naruto-next-generations",
+      "image": "https://image.tmdb.org/t/p/w780/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
+      "source": "ToonStream"
     }
-    ```
-
-#### C. Stream Link Extractor
-Parses player details and automatically decodes Base64 payloads containing localized audio streams (Hindi, Tamil, Telugu, Japanese, etc.).
-*   **Endpoint**: `/animesalt/streams`
-*   **Query Parameters**:
-    *   `url` (String, Required) - The episode page URL.
-*   **Sample Request**:
-    ```text
-    GET /animesalt/streams?url=https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x6/
-    ```
+  ]
+}
+```
 
 ---
 
-### 3. Dedicated ToonStream Endpoints
+### 2. Dedicated AnimeSalt Modules
+* **Search Module:** `GET /animesalt/search?q=<query>`
+* **Episodes & Seasons:** `GET /animesalt/episodes?url=<series_url>` *(Extracts native layout thumbnails)*
+* **Stream Extractor:** `GET /animesalt/streams?url=<episode_url>` *(Decodes Base64 localized streams)*
 
-#### A. Dedicated Search
-*   **Endpoint**: `/toonstream/search`
-*   **Query Parameters**: `q` (Required)
-*   **Sample Request**: `GET /toonstream/search?q=Chainsaw`
-
-#### B. Episodes List Extractor (With Native HTML Screenshots)
-Parses the episodes grid. This endpoint automatically extracts native TMDb-linked episode stills from the website structure.
-*   **Endpoint**: `/toonstream/episodes`
-*   **Query Parameters**:
-    *   `url` (String, Required) - The series page URL.
-*   **Sample Request**:
-    ```text
-    GET /toonstream/episodes?url=https://toon-stream.site/series/chainsaw-man
-    ```
-*   **Sample JSON Response**:
-    ```json
+#### 📤 Sample Response (`/animesalt/episodes`)
+```json
+{
+  "seasons": [
+    { "name": "Season 1 • 1-11 (11)", "seasonNum": "1", "postId": "2308" }
+  ],
+  "episodes": [
     {
-      "seasons": [
-        { "name": "Season 1", "seasonNum": "1", "ajaxUrl": "/series/chainsaw-man/season/1" }
-      ],
-      "episodes": [
-        {
-          "epNum": "1x1",
-          "title": "S 1 | E 1",
-          "link": "https://toon-stream.site/episode/chainsaw-man-1x1/",
-          "image": "https://image.tmdb.org/t/p/w780/dDwTq0HNQGMCpEdVQQyksvJvUcP.jpg"
-        }
-      ]
+      "epNum": "1",
+      "title": "Daemons of the Shadow Realm 1x1",
+      "link": "https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x1/",
+      "image": "https://img.animesalt.ac/images-unified/thumb_2308_s1e1.jpg"
     }
-    ```
+  ]
+}
+```
 
-#### C. Stream & Direct Downloads Extractor (With Automated Ad-Bypassing)
-ToonStream embeds usually contain clickable ad overlays. This endpoint automatically visits those embed URLs in the background and resolves the actual underlying clean video link.
+---
 
-*   **Endpoint**: `/toonstream/streams`
-*   **Query Parameters**:
-    *   `url` (String, Required) - The ToonStream episode page URL.
-*   **Sample Request**:
-    ```text
-    GET /toonstream/streams?url=https://toon-stream.site/episode/chainsaw-man-1x4/
-    ```
-*   **Sample JSON Response**:
-    ```json
+### 3. Dedicated ToonStream Modules & Ad-Bypasser
+* **Search Module:** `GET /toonstream/search?q=<query>`
+* **Grid Episode Extractor:** `GET /toonstream/episodes?url=<series_url>`
+* **Stream & Download Resolver:** `GET /toonstream/streams?url=<episode_url>` *(Performs background ad-bypassing)*
+
+#### 📤 Sample Response (`/toonstream/streams`)
+```json
+{
+  "streams": [
     {
-      "streams": [
-        {
-          "server": "Short",
-          "link": "https://toon-stream.site/embed/81227690d56aef40",
-          "is_bypassed": true
-        },
-        {
-          "server": "Ruby",
-          "link": "https://raw-video-source-or-un-redirected-link.com/...",
-          "is_bypassed": true
-        }
-      ],
-      "downloads": [
-        {
-          "server": "Ruby",
-          "link": "https://rubystm.com/d/sbsp0glxo8h1.html"
-        },
-        {
-          "server": "GDMirror",
-          "link": "https://gdmirrorbot.nl/file/ihqrdvu"
-        }
-      ]
+      "server": "Short",
+      "link": "https://toon-stream.site/embed/81227690d56aef40",
+      "is_bypassed": true
     }
-    ```
+  ],
+  "downloads": [
+    {
+      "server": "Ruby",
+      "link": "https://rubystm.com/d/sbsp0glxo8h1.html"
+    },
+    {
+      "server": "GDMirror",
+      "link": "https://gdmirrorbot.nl/file/ihqrdvu"
+    }
+  ]
+}
+```
 
 ---
 
 ### 4. Official TMDb Metadata & Thumbnail Service
-A fallback endpoint to fetch high-definition official episode screenshots (still-images) and metadata directly from TMDb databases using search titles [1].
+A fallback endpoint returning crisp high-definition episode screenshots, overviews, and release timelines via structural title tracking.
 
-*   **Endpoint**: `/tmdb/episode-thumbnail`
-*   **Method**: `GET`
-*   **Query Parameters**:
-    *   `title` (String, Required) - Show title (e.g., `Chainsaw Man`).
-    *   `season` (Number, Required) - Season number.
-    *   `episode` (Number, Required) - Episode number.
-*   **Sample Request**:
-    ```text
-    GET /tmdb/episode-thumbnail?title=Chainsaw Man&season=1&episode=4
-    ```
-*   **Sample JSON Response**:
-    ```json
-    {
-      "found": true,
-      "tv_id": 114410,
-      "show_title": "Chainsaw Man",
-      "episode_name": "Rescue",
-      "overview": "Denji has a simple dream...",
-      "air_date": "2022-11-01",
-      "thumbnails": {
-        "w500": "https://image.tmdb.org/t/p/w500/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
-        "w780": "https://image.tmdb.org/t/p/w780/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
-        "original": "https://image.tmdb.org/t/p/original/78p3CwjbIbJv2MucbLWnvBtF34d.jpg"
-      }
-    }
-    ```
+* **Endpoint:** `GET /tmdb/episode-thumbnail`
+* **Query Parameters:** `title` (String), `season` (Number), `episode` (Number)
 
----
-
-## 🛠️ Local Development Setup
-
-To run this project locally on your machine, follow these steps:
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/<your-username>/fetch-stream.git
-   cd fetch-stream
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start the local server**:
-   ```bash
-   npm start
-   ```
-   The local development server will start on `http://localhost:3000`.
-
----
-
-## ☁️ Deploying on Vercel
-
-This API is natively configured with `vercel.json` for serverless route handling.
-
-1. Connect your GitHub repository with the **Vercel Dashboard**.
-2. Select your repository and click "Deploy".
-3. Vercel will automatically read the root-level config files and execute deployment in seconds.
-
----
-
-## ⚖️ Disclaimer & Compliance
-This software is designed solely for educational research and analytical integration. The API extracts metadata and indices hosted by external third-party services on the public web. It does not store, host, or re-transmit media files directly.
+#### 📥 Sample Request
+```http
+GET https://fetch-stream.vercel.app/tmdb/episode-thumbnail?title=Chainsaw%20Man&season=1&episode=4
 ```
+
+#### 📤 Sample JSON Response (`200 OK`)
+```json
+{
+  "found": true,
+  "tv_id": 114410,
+  "show_title": "Chainsaw Man",
+  "episode_name": "Rescue",
+  "overview": "Denji has a simple dream...",
+  "air_date": "2022-11-01",
+  "thumbnails": {
+    "w500": "https://image.tmdb.org/t/p/w500/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
+    "w780": "https://image.tmdb.org/t/p/w780/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
+    "original": "https://image.tmdb.org/t/p/original/78p3CwjbIbJv2MucbLWnvBtF34d.jpg"
+  }
+}
+```
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+## 🛠️ Local Installation & Setup
+
+To boot and test this microservice locally on your computer:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/your-username/fetch-stream.git
+
+# 2. Enter workspace directory
+cd fetch-stream
+
+# 3. Install required node packages
+npm install
+
+# 4. Boot up local environment
+npm start
+```
+*The local development server will start on `http://localhost:3000`*
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+## ☁️ Serverless Deployment
+
+Configured natively with a root-level `vercel.json` routing configuration file.
+1. Connect your repository to the **[Vercel Dashboard](https://vercel.com/)**.
+2. Hit **Deploy**. Vercel will compile and spin up your endpoints instantly.
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+## ⚡ Tech Stack & Tools Used
+
+<p align="center">
+  <a href="#!"><img src="https://skillicons.dev/icons?i=nodejs,express,javascript,git,github,vscode,vercel,linux&perline=8" /></a>
+</p>
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+## ⚠️ Disclaimer & Legal Compliance
+
+> [!CAUTION]
+> This repository is built strictly for **educational research and analytical integration**. FetchStream acts as an abstract data indexer querying public web records. It does not store, host, or re-transmit copyrighted media binaries on its own servers.
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+
+<div align="center">
+
+## Connect With The Builders
+
+<a href="https://t.me/Unrated_Coder">
+  <img src="https://img.shields.io/badge/Join_Telegram-@Unrated__Coder-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" />
+</a>
+&nbsp;&nbsp;
+<a href="https://github.com/Unrated-Coder">
+  <img src="https://img.shields.io/badge/GitHub-Unrated_Coder-181717?style=for-the-badge&logo=github&logoColor=white" />
+</a>
+
+<p><b>Star this repository if it helps your automation or development workflow!</b></p>
+
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f7ff,50:7928ca,100:ff007f&height=140&section=footer" width="100%"/></a>
+
+</div>
