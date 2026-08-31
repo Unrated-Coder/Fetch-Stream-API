@@ -1,20 +1,20 @@
 <div align="center">
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f7ff,50:7928ca,100:ff007f&height=260&section=header&text=FETCHSTREAM%20API&fontSize=48&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Serverless%20Scraper%20%7C%20Ad-Bypasser%20%7C%20TMDb%20Engine&descAlignY=60&descSize=18" width="100%"/></a>
+<a href="#!"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f7ff,50:7928ca,100:ff007f&height=260&section=header&text=FETCHSTREAM%20API&fontSize=48&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Anime%20Streaming%20%7C%20Embed%20Bypasser%20%7C%20Direct%20Downloads&descAlignY=60&descSize=18" width="100%"/></a>
 
 <a href="https://t.me/Unrated_Coder">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=24&duration=2500&pause=800&color=00F7FF&center=true&vCenter=true&width=750&lines=FETCHSTREAM+API+%E2%84%A2;A+Fast+Serverless+Scraper+for+Anime+and+Toons;Bypasses+Ads+Automatically;Powered+by+Unrated+Coder" alt="Typing Animation" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=24&duration=2500&pause=800&color=00F7FF&center=true&vCenter=true&width=750&lines=FETCHSTREAM+API+%E2%84%A2;Fetch+Anime+Streaming+Links+Instantly;Bypass+Embed+Ads+and+Extract+Downloads;Powered+by+Unrated+Coder" alt="Typing Animation" />
 </a>
 
 <p align="center">
   <a href="https://fetch-stream.vercel.app">
-    <img src="https://img.shields.io/badge/API-Live_Base_URL-00C853?style=for-the-badge&logo=vercel&logoColor=white" />
+    <img src="https://img.shields.io/badge/API-Live_Base_URL-00C853?style=social&logo=vercel" />
   </a>
   <a href="https://t.me/Unrated_Coder">
-    <img src="https://img.shields.io/badge/Telegram-Unrated_Coder-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" />
+    <img src="https://img.shields.io/badge/Telegram-Unrated_Coder-26A5E4?style=social&logo=telegram" />
   </a>
-  <a href="#!"><img src="https://img.shields.io/badge/Status-Active_Production-00f7ff?style=for-the-badge" /></a>
-  <a href="#!"><img src="https://img.shields.io/badge/License-MIT-FF6B00?style=for-the-badge" /></a>
+  <a href="#!"><img src="https://img.shields.io/badge/Status-Active_Production-00f7ff?style=social" /></a>
+  <a href="#!"><img src="https://img.shields.io/badge/License-MIT-FF6B00?style=social" /></a>
 </p>
 
 </div>
@@ -24,32 +24,33 @@
 ## 📖 About FetchStream API
 
 > [!NOTE]
-> **FetchStream API** is an advanced, high-performance open-source microservice built by **Unrated Coder ™** to query, extract, and normalize streaming assets from various indexing platforms seamlessly inside a Vercel serverless environment.
+> **FetchStream API** is a specialized, high-performance streaming link extraction engine built by **Unrated Coder ™**. It is designed to fetch embedded anime/toon streaming links, bypass annoying click-ad overlays, and extract direct download mirrors cleanly inside a Vercel serverless environment.
 
 <div align="center">
   <a href="#!">
-    <img src="https://readme-typing-svg.demolab.com?font=Space+Mono&weight=700&size=22&duration=2000&pause=500&color=7928CA&center=true&vCenter=true&width=600&lines=%5B+BYPASSES+CLICK-ADS+%5D;%5B+DECODES+BASE64+STREAMS+%5D;%5B+TMDB+HD+METADATA+%5D" alt="Subtext Animation" />
+    <img src="https://readme-typing-svg.demolab.com?font=Space+Mono&weight=700&size=22&duration=2000&pause=500&color=7928CA&center=true&vCenter=true&width=600&lines=%5B+EXTRACTS+EMBEDDED+STREAMS+%5D;%5B+BYPASSES+CLICK-ADS+%5D;%5B+FETCHES+DIRECT+DOWNLOADS+%5D" alt="Subtext Animation" />
   </a>
 </div>
 
 ### Core System Features
-- **Concurrent Multi-Site Aggregation:** Queries AnimeSalt and ToonStream simultaneously using asynchronous promise resolutions.
-- **Automated Ad-Bypasser:** Crawls hidden iframe wrappers and bypasses click-ad overlays to pull pure source streams.
-- **Base64 Audio Unpacking:** Automatically decodes localized audio track configurations (Hindi, Tamil, Telugu, Japanese).
-- **Rich TMDb Integration:** Maps records with high-definition screenshots, official overviews, and air-dates [1].
+- **Embedded Stream Extraction:** Directly hooks into third-party anime players to pull raw playable streaming URLs.
+- **Automated Ad-Bypasser:** Crawls hidden iframe wrappers and bypasses malicious click-ad overlays to reveal clean player links.
+- **Direct Download Fetcher:** Extracts high-speed direct download links (Ruby, GDMirror, etc.) without human intervention.
+- **Base64 Audio Unpacking:** Automatically decodes localized audio configurations (Hindi, Tamil, Telugu, Japanese).
+- **Rich TMDb Integration:** Maps records with high-definition screenshots, official overviews, and air-dates.
 
 <a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
 
 ## 🎯 Target Platforms & Ecosystem
 
 > [!TIP]
-> **AnimeSalt (`animesalt.ac`)** > Deep series indexer, season mapper, and Base64 localized stream payloads [1].
+> **AnimeSalt (`animesalt.ac`)** > Deep series indexer, season mapper, and Base64 localized stream payloads.
 
 > [!IMPORTANT]
-> **ToonStream (`toon-stream.site`)** > Cartoon/anime database featuring automated background verification and ad-wall stripping [1].
+> **ToonStream (`toon-stream.site`)** > Anime/cartoon stream database featuring automated background verification and ad-wall stripping.
 
 > [!CAUTION]
-> **TMDb Database (`themoviedb.org`)** > Official promotional art engine providing crisp backdrop images and episode titles [1].
+> **TMDb Database (`themoviedb.org`)** > Official promotional art engine providing crisp backdrop images and episode titles.
 
 <a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
 
@@ -101,7 +102,7 @@ GET https://fetch-stream.vercel.app/search?q=Boruto
 ### 2. Dedicated AnimeSalt Modules
 * **Search Module:** `GET /animesalt/search?q=<query>`
 * **Episodes & Seasons:** `GET /animesalt/episodes?url=<series_url>` *(Extracts native layout thumbnails)*
-* **Stream Extractor:** `GET /animesalt/streams?url=<episode_url>` *(Decodes Base64 localized streams)*
+* **Stream Extractor:** `GET /animesalt/streams?url=<episode_url>` *(Decodes Base64 localized streaming links)*
 
 #### 📤 Sample Response (`/animesalt/episodes`)
 ```json
@@ -122,10 +123,10 @@ GET https://fetch-stream.vercel.app/search?q=Boruto
 
 ---
 
-### 3. Dedicated ToonStream Modules & Ad-Bypasser
+### 3. Dedicated ToonStream Modules & Embed/Download Extractor
 * **Search Module:** `GET /toonstream/search?q=<query>`
 * **Grid Episode Extractor:** `GET /toonstream/episodes?url=<series_url>`
-* **Stream & Download Resolver:** `GET /toonstream/streams?url=<episode_url>` *(Performs background ad-bypassing)*
+* **Embed Stream & Direct Download Resolver:** `GET /toonstream/streams?url=<episode_url>` *(Bypasses click-ads and fetches raw stream / download links)*
 
 #### 📤 Sample Response (`/toonstream/streams`)
 ```json
@@ -222,7 +223,7 @@ Configured natively with a root-level `vercel.json` routing configuration file.
 ## ⚠️ Disclaimer & Legal Compliance
 
 > [!CAUTION]
-> This repository is built strictly for **educational research and analytical integration**. FetchStream acts as an abstract data indexer querying public web records. It does not store, host, or re-transmit copyrighted media binaries on its own servers.
+> This repository is built strictly for **educational research and analytical integration**. FetchStream acts as an abstract data indexer querying public web records. It does not store, host, or re-transmit copyrighted media binaries on its servers.
 
 <a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
 
