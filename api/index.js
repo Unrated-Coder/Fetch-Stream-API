@@ -9,7 +9,7 @@ app.use(express.json());
 
 // Target Domain Configurations
 const ANIMESALT_BASE = "https://animesalt.cx";
-const TOONSTREAM_BASE = "https://toon-stream.site";
+const TOONSTREAM_BASE = "https://toon-stream.vip";
 const TMDB_API_KEY = process.env.TMDB_API_KEY || "ed9311c3613b06f414be99abaec5dd86";
 
 // Global Request Headers Generator
