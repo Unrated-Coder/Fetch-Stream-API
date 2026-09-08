@@ -51,7 +51,7 @@
 ## 🎯 Target Platforms & Ecosystem
 
 > [!TIP]
-> **AnimeSalt (`animesalt.ac`)** > Deep series indexer, season mapper, and Base64 localized stream payloads.
+> **AnimeSalt (`animesalt.cx`)** > Deep series indexer, season mapper, and Base64 localized stream payloads.
 
 > [!IMPORTANT]
 > **ToonStream (`toon-stream.site`)** > Anime/cartoon stream database featuring automated background verification and ad-wall stripping.
@@ -93,7 +93,7 @@ GET https://fetch-stream.vercel.app/search?q=Boruto
   "results": [
     {
       "title": "Boruto: Naruto Next Generations",
-      "link": "https://animesalt.ac/series/boruto-naruto-next-generations/",
+      "link": "https://animesalt.cx/series/boruto-naruto-next-generations/",
       "image": "https://image.tmdb.org/t/p/w500/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
       "source": "AnimeSalt"
     },
@@ -126,8 +126,8 @@ GET https://fetch-stream.vercel.app/search?q=Boruto
     {
       "epNum": "1",
       "title": "Daemons of the Shadow Realm 1x1",
-      "link": "https://animesalt.ac/episode/daemons-of-the-shadow-realm-1x1/",
-      "image": "https://img.animesalt.ac/images-unified/thumb_2308_s1e1.jpg"
+      "link": "https://animesalt.cx/episode/daemons-of-the-shadow-realm-1x1/",
+      "image": "https://img.animesalt.cx/images-unified/thumb_2308_s1e1.jpg"
     }
   ]
 }
