@@ -1,325 +1,188 @@
 <div align="center">
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f7ff,50:7928ca,100:ff007f&height=260&section=header&text=FETCHSTREAM%20API&fontSize=48&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Anime%20Streaming%20%7C%20Embed%20Bypasser%20%7C%20Direct%20Downloads&descAlignY=60&descSize=18" width="100%"/></a>
+# FetchStream Pro API v2.0
 
-<a href="https://t.me/Unrated_Coder">
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=24&duration=2500&pause=800&color=00F7FF&center=true&vCenter=true&width=750&lines=FETCHSTREAM+API+%E2%84%A2;Fetch+Anime+Streaming+Links+Instantly;Bypass+Embed+Ads+and+Extract+Downloads;Powered+by+Unrated+Coder+%26+Shadow+Paradox+Coders" alt="Typing Animation" />
-</a>
+**Production-grade, lazy-fetch streaming metadata & link extraction API.**
+Real-time data on every request · Zero database · Integrate and build.
 
-<p align="center">
-<a href="https://fetch-stream.vercel.app">
-<img src="https://img.shields.io/badge/API-Live_Base_URL-00C853?style=social&logo=vercel" />
-</a>
-<a href="https://t.me/Unrated_Coder">
-<img src="https://img.shields.io/badge/Telegram-Unrated_Coder-26A5E4?style=social&logo=telegram" />
-</a>
-<a href="https://t.me/shadowparadoxcoders">
-<img src="https://img.shields.io/badge/Telegram-Shadow_Paradox_Coders-26A5E4?style=social&logo=telegram" />
-</a>
-<a href="https://github.com/Unrated-Coder/Fetch-Stream-API/stargazers">
-<img src="https://img.shields.io/badge/Stars-%E2%AD%90%20Us-FFD700?style=social&logo=github" />
-</a>
-<a href="#!"><img src="https://img.shields.io/badge/Status-Active_Production-00f7ff?style=social" /></a>
-<a href="#!"><img src="https://img.shields.io/badge/License-MIT-FF6B00?style=social" /></a>
-</p>
+`GET /search` → `GET /{source}/episodes` → `GET /{source}/streams` — that's the whole workflow.
 
 </div>
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+---
 
-## 📖 About FetchStream API
+## ✨ What makes this "Pro"
 
-> [!NOTE]
-> **FetchStream API** is a specialized, high-performance streaming link extraction engine built by **Unrated Coder ™** & **『 SHADOW × PARADOX × CODERS TM 』**. It is designed to fetch embedded anime/toon streaming links, bypass annoying click-ad overlays, and extract direct download mirrors cleanly inside a Vercel serverless environment.
+| Feature | How it works |
+|---|---|
+| **True lazy fetching** | Nothing is prefetched at boot. Upstream sources are hit **only when a client requests a key that is not cached**. |
+| **Smart TTL cache** | Listings 5 min · stream links 2 min (they expire fast) · TMDb artwork 24 h. In-memory, LRU-evicted — **no Redis, no DB**. |
+| **Stampede protection** | 100 concurrent misses on the same key → **1 upstream request**, everyone else awaits the same promise. |
+| **Resilient upstream** | Global concurrency cap (politeness), per-request timeout, retry with exponential backoff on 5xx/429. |
+| **API protection** | Per-IP fixed-window rate limit, hardened security headers, configurable CORS. |
+| **Self-documenting** | `GET /` returns the full endpoint index; `GET /health` reports cache stats and uptime. |
+| **Unified envelope** | Every response: `{ success, data, meta: { cached, latency_ms, fetched_at } }` — perfect for front-ends. |
+| **Vercel + VPS ready** | Same codebase deploys as a serverless function or a long-running Node server with graceful shutdown. |
 
-<div align="center">
-<a href="#!">
-<img src="https://readme-typing-svg.demolab.com?font=Space+Mono&weight=700&size=22&duration=2000&pause=500&color=7928CA&center=true&vCenter=true&width=600&lines=%5B+EXTRACTS+EMBEDDED+STREAMS+%5D;%5B+BYPASSES+CLICK-ADS+%5D;%5B+FETCHES+DIRECT+DOWNLOADS+%5D" alt="Subtext Animation" />
-</a>
-</div>
+---
 
-### Core System Features
+## 🚀 Quick start
 
-- **Embedded Stream Extraction:** Directly hooks into third-party anime players to pull raw playable streaming URLs.
-- **Automated Ad-Bypasser:** Crawls hidden iframe wrappers and bypasses malicious click-ad overlays to reveal clean player links.
-- **Direct Download Fetcher:** Extracts high-speed direct download links (Ruby, GDMirror, etc.) without human intervention.
-- **Base64 Audio Unpacking:** Automatically decodes localized audio configurations (Hindi, Tamil, Telugu, Japanese).
-- **Rich TMDb Integration:** Maps records with high-definition screenshots, official overviews, and air-dates.
+### Local / VPS
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
-
-## 🎯 Target Platforms & Ecosystem
-
-> [!TIP]
-> **AnimeSalt (`animesalt.cx`)** > Deep series indexer, season mapper, and Base64 localized stream payloads.
-
-> [!IMPORTANT]
-> **ToonStream (`toon-stream.site`)** > Anime/cartoon stream database featuring automated background verification and ad-wall stripping.
-
-> [!CAUTION]
-> **TMDb Database (`themoviedb.org`)** > Official promotional art engine providing crisp backdrop images and episode titles.
-
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
-
-## 🚀 Live Production Endpoint
-
-```text
-https://fetch-stream.vercel.app
+```bash
+npm install
+npm start          # http://localhost:3000
 ```
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+### Vercel (one click, no config)
 
-## 🔌 Comprehensive API Endpoints Reference
+```bash
+npm i -g vercel
+vercel
+```
 
-### 1. Unified Multi-Site Search
+Set any env vars from `.env.example` in your host dashboard if you want non-defaults. **No database, no migrations, no extra services — ever.**
 
-Queries all integrated target platforms concurrently in a single thread, normalizing divergent search results into a unified payload format.
+---
 
-- **Endpoint:** `GET /search`
-- **Query Parameter:** `q` *(String, Required)* — Target search keyword (e.g., `Boruto`, `Chainsaw Man`).
+## 🔌 Endpoints
 
-#### 📥 Sample Request
+All endpoints are `GET` and lazily fetched. Append `?refresh=1` to bypass the cache and force a fresh upstream fetch.
+
+### 1. Unified search — both sources in parallel
 
 ```http
-GET https://fetch-stream.vercel.app/search?q=Boruto
+GET /search?q=Boruto
 ```
-
-#### 📤 Sample JSON Response (`200 OK`)
 
 ```json
 {
-  "query": "Boruto",
-  "total": 2,
-  "results": [
-    {
-      "title": "Boruto: Naruto Next Generations",
-      "link": "https://animesalt.cx/series/boruto-naruto-next-generations/",
-      "image": "https://image.tmdb.org/t/p/w500/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
-      "source": "AnimeSalt"
-    },
-    {
-      "title": "Boruto: Naruto Next Generations",
-      "link": "https://toon-stream.site/series/boruto-naruto-next-generations",
-      "image": "https://image.tmdb.org/t/p/w780/e0B6i48kxdRkMcK4tR4YNfXGWOc.jpg",
-      "source": "ToonStream"
-    }
-  ]
+  "success": true,
+  "data": {
+    "query": "Boruto",
+    "total": 2,
+    "results": [
+      { "title": "Boruto: Naruto Next Generations", "link": "https://animesalt.cx/series/...", "image": "https://image.tmdb.org/...", "type": "series", "source": "AnimeSalt" }
+    ]
+  },
+  "meta": { "cached": false, "latency_ms": 812, "fetched_at": "2026-10-31T01:30:00.000Z" }
 }
 ```
 
----
-
-### 2. Dedicated AnimeSalt Modules
-
-- **Search Module:** `GET /animesalt/search?q=<query>`
-- **Episodes & Seasons:** `GET /animesalt/episodes?url=<series_url>` *(Extracts native layout thumbnails)*
-- **Stream Extractor:** `GET /animesalt/streams?url=<episode_url>` *(Decodes Base64 localized streaming links)*
-
-#### 📤 Sample Response (`/animesalt/episodes`)
-
-```json
-{
-  "seasons": [
-    { "name": "Season 1 • 1-11 (11)", "seasonNum": "1", "postId": "2308" }
-  ],
-  "episodes": [
-    {
-      "epNum": "1",
-      "title": "Daemons of the Shadow Realm 1x1",
-      "link": "https://animesalt.cx/episode/daemons-of-the-shadow-realm-1x1/",
-      "image": "https://img.animesalt.cx/images-unified/thumb_2308_s1e1.jpg"
-    }
-  ]
-}
-```
-
----
-
-### 3. Dedicated ToonStream Modules & Embed/Download Extractor
-
-- **Search Module:** `GET /toonstream/search?q=<query>`
-- **Grid Episode Extractor:** `GET /toonstream/episodes?url=<series_url>`
-- **Embed Stream & Direct Download Resolver:** `GET /toonstream/streams?url=<episode_url>` *(Bypasses click-ads and fetches raw stream / download links)*
-
-#### 📤 Sample Response (`/toonstream/streams`)
-
-```json
-{
-  "streams": [
-    {
-      "server": "Short",
-      "link": "https://toon-stream.site/embed/81227690d56aef40",
-      "is_bypassed": true
-    }
-  ],
-  "downloads": [
-    {
-      "server": "Ruby",
-      "link": "https://rubystm.com/d/sbsp0glxo8h1.html"
-    },
-    {
-      "server": "GDMirror",
-      "link": "https://gdmirrorbot.nl/file/ihqrdvu"
-    }
-  ]
-}
-```
-
----
-
-### 4. Official TMDb Metadata & Thumbnail Service
-
-A fallback endpoint returning crisp high-definition episode screenshots, overviews, and release timelines via structural title tracking.
-
-- **Endpoint:** `GET /tmdb/episode-thumbnail`
-- **Query Parameters:** `title` (String), `season` (Number), `episode` (Number)
-
-#### 📥 Sample Request
+### 2. Episodes (seasons + grid)
 
 ```http
-GET https://fetch-stream.vercel.app/tmdb/episode-thumbnail?title=Chainsaw%20Man&season=1&episode=4
+GET /animesalt/episodes?url=<series_page_url>
+GET /toonstream/episodes?url=<series_page_url>
 ```
 
-#### 📤 Sample JSON Response (`200 OK`)
+### 3. Streams & downloads
+
+```http
+GET /animesalt/streams?url=<episode_page_url>     # Base64 multi-language payloads auto-decoded
+GET /toonstream/streams?url=<episode_page_url>    # ad-wall embeds bypassed, mirrors extracted
+```
+
+### 4. TMDb artwork fallback
+
+```http
+GET /tmdb/episode-thumbnail?title=Chainsaw%20Man&season=1&episode=4
+```
+
+### Meta endpoints
+
+| Route | Purpose |
+|---|---|
+| `GET /` | Full machine-readable endpoint index (this is the docs) |
+| `GET /health` | Uptime, cache stats, configured sources |
+
+---
+
+## 🧩 Building a website with it (no database)
+
+The entire data flow is lazy by design:
+
+```
+User types "Boruto"          →  GET /search?q=Boruto        (fetched now, cached 5 min)
+User clicks a series         →  GET /animesalt/episodes?url=…  (fetched now, cached 5 min)
+User clicks episode 4        →  GET /animesalt/streams?url=…   (fetched now, cached 2 min)
+User clicks episode 4 again  →  instant, served from cache
+```
+
+- Each response carries `meta.cached` and `meta.latency_ms` so your UI can show a "live" vs "cached" badge.
+- `?refresh=1` forces fresh data — wire it to a "Reload" button.
+- See `examples/demo.html` — a complete, copy-pasteable anime site in **one HTML file**. Just change `API_BASE` at the top.
+
+```html
+<script>
+const API_BASE = "https://your-deployed-api.vercel.app";
+const data = await (await fetch(`${API_BASE}/search?q=${q}`)).json();
+// data.success, data.data.results, data.meta.cached ...
+</script>
+```
+
+---
+
+## ⚙️ Configuration (all optional)
+
+| Env variable | Default | Purpose |
+|---|---|---|
+| `ANIMESALT_BASE` | `https://animesalt.cx` | Override if source changes domain |
+| `TOONSTREAM_BASE` | `https://toonstream.vip` | Override if source changes domain |
+| `TMDB_API_KEY` | built-in | Set your own free key from themoviedb.org |
+| `CACHE_TTL_MS` | `300000` | Default cache TTL |
+| `CACHE_TTL_STREAMS_MS` | `120000` | Stream endpoint TTL |
+| `CACHE_TTL_TMDB_MS` | `86400000` | TMDb TTL |
+| `RATE_LIMIT_MAX` | `60` | Requests per IP per window |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window |
+| `UPSTREAM_TIMEOUT_MS` | `10000` | Upstream timeout |
+| `MAX_CONCURRENT_UPSTREAM` | `8` | Global upstream concurrency cap |
+| `CORS_ORIGINS` | `*` | Comma-separated origin allowlist |
+
+---
+
+## ❌ Error envelope
 
 ```json
 {
-  "found": true,
-  "tv_id": 114410,
-  "show_title": "Chainsaw Man",
-  "episode_name": "Rescue",
-  "overview": "Denji has a simple dream...",
-  "air_date": "2022-11-01",
-  "thumbnails": {
-    "w500": "https://image.tmdb.org/t/p/w500/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
-    "w780": "https://image.tmdb.org/t/p/w780/78p3CwjbIbJv2MucbLWnvBtF34d.jpg",
-    "original": "https://image.tmdb.org/t/p/original/78p3CwjbIbJv2MucbLWnvBtF34d.jpg"
+  "success": false,
+  "error": {
+    "code": "UPSTREAM_BLOCKED",
+    "message": "Access blocked by upstream server (Cloudflare / WAF)",
+    "upstream_status": 403
   }
 }
 ```
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+Codes: `VALIDATION_ERROR` (400) · `NOT_FOUND` (404) · `UPSTREAM_NOT_FOUND` (404) · `UPSTREAM_BLOCKED` (502) · `UPSTREAM_TIMEOUT` (504) · `RATE_LIMITED` (429) · `TMDB_NOT_FOUND` (404).
 
-## 🛠️ Local Installation & Setup
+---
 
-To boot and test this microservice locally on your computer:
+## 📁 Project structure
 
-```bash
-# 1. Clone repository
-git clone https://github.com/Unrated-Coder/Fetch-Stream-API.git
-
-# 2. Enter workspace directory
-cd fetch-stream
-
-# 3. Install required node packages
-npm install
-
-# 4. Boot up local environment
-npm start
+```
+src/
+├── app.js                 # Express app + middleware stack
+├── index.js               # Server bootstrap + graceful shutdown (VPS mode)
+├── config.js              # Env-driven configuration
+├── middleware/
+│   ├── security.js        # Security headers, CORS, rate limiter
+│   ├── validate.js        # Declarative query validation
+│   └── errorHandler.js    # 404 + unified error envelope
+├── scrapers/
+│   ├── animesalt.js       # Search / episodes / streams (Base64 decode)
+│   ├── toonstream.js      # Search / episodes / streams (embed bypass)
+│   └── tmdb.js            # Official episode stills + metadata
+├── routes/                # One router per resource
+├── services/cacheStore.js # Process-wide TTL cache singleton
+└── utils/                 # http (retry+semaphore), cache, errors, respond, url, logger
+examples/demo.html         # Single-file website integration demo
+vercel.json                # Serverless deployment config
 ```
 
-*The local development server will start on `http://localhost:3000`*
+---
 
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
+## ⚠️ Disclaimer
 
-## ☁️ Serverless Deployment
-
-Configured natively with a root-level `vercel.json` routing configuration file.
-
-1. Connect your repository to the **[Vercel Dashboard](https://vercel.com/)**.
-2. Hit **Deploy**. Vercel will compile and spin up your endpoints instantly.
-
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
-
-## ⚡ Tech Stack & Tools Used
-
-<p align="center">
-<a href="#!"><img src="https://skillicons.dev/icons?i=nodejs,express,javascript,git,github,vscode,vercel,linux&perline=8" /></a>
-</p>
-
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
-
-## 🤝 Contributors & Joint Partners
-
-> [!NOTE]
-> FetchStream API is a **collaborative effort** between two passionate development teams. This project thrives on the combined expertise of **Unrated Coder** and **『 SHADOW × PARADOX × CODERS TM 』**.
-
-<div align="center">
-
-<table>
-<tr>
-<td align="center" width="50%">
-<a href="https://github.com/Unrated-Coder">
-<img src="https://img.shields.io/badge/GitHub-Unrated__Coder-181717?style=for-the-badge&logo=github&logoColor=white" />
-</a>
-<br/><br/>
-<a href="https://t.me/Unrated_Coder">
-<img src="https://img.shields.io/badge/Telegram-@Unrated__Coder-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" />
-</a>
-<br/><br/>
-<b>Unrated Coder ™</b>
-<br/>
-<sub>Core Architecture & API Engineering</sub>
-</td>
-<td align="center" width="50%">
-<a href="https://github.com/shadowparadoxcoders">
-<img src="https://img.shields.io/badge/GitHub-Shadow_Paradox_Coders-181717?style=for-the-badge&logo=github&logoColor=white" />
-</a>
-<br/><br/>
-<a href="https://t.me/shadowparadoxcoders">
-<img src="https://img.shields.io/badge/Telegram-Shadow_Paradox_Coders-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" />
-</a>
-<br/><br/>
-<b>『 SHADOW × PARADOX × CODERS 』</b>
-<br/>
-<sub>Integration, UI/UX & Community Growth</sub>
-</td>
-</tr>
-</table>
-
-<br/>
-
-<a href="https://github.com/Unrated-Coder/Fetch-Stream-API/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=Unrated-Coder/Fetch-Stream-API" alt="Contributors" />
-</a>
-
-</div>
-
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
-
-## ⚠️ Disclaimer & Legal Compliance
-
-> [!CAUTION]
-> This repository is built strictly for **educational research and analytical integration**. FetchStream acts as an abstract data indexer querying public web records. It does not store, host, or re-transmit copyrighted media binaries on its servers.
-
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=rect&color=0:00f7ff,50:7928ca,100:ff007f&height=4" width="100%"/></a>
-
-<div align="center">
-
-## 🌐 Connect With The Builders
-
-<p>
-<a href="https://t.me/Unrated_Coder">
-<img src="https://img.shields.io/badge/Join_Telegram-@Unrated__Coder-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" />
-</a>
-&nbsp;&nbsp;
-<a href="https://t.me/shadowparadoxcoders">
-<img src="https://img.shields.io/badge/Join_Telegram-Shadow_Paradox_Coders-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" />
-</a>
-</p>
-
-<p>
-<a href="https://github.com/Unrated-Coder">
-<img src="https://img.shields.io/badge/GitHub-Unrated_Coder-181717?style=for-the-badge&logo=github&logoColor=white" />
-</a>
-&nbsp;&nbsp;
-<a href="https://github.com/shadowparadoxcoders">
-<img src="https://img.shields.io/badge/GitHub-Shadow_Paradox_Coders-181717?style=for-the-badge&logo=github&logoColor=white" />
-</a>
-</p>
-
-<p><b>  Star this repository if it helps your automation or development workflow!</b></p>
-
-<a href="#!"><img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f7ff,50:7928ca,100:ff007f&height=140&section=footer" width="100%"/></a>
-
-</div>
+This API aggregates publicly available metadata and links from third-party sources for educational/demo purposes. It does not host, store, or redistribute any media content. Respect the terms of service of all upstream platforms and applicable copyright law in your jurisdiction.

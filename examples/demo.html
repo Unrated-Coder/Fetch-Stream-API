@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MyAnime — powered by FetchStream Pro API</title>
+<style>
+  :root { --bg:#0b0e14; --card:#151a23; --accent:#00e5ff; --text:#e6edf3; --muted:#8b949e; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+  header { padding:24px 20px; text-align:center; border-bottom:1px solid #1c2333; }
+  header h1 { font-size:26px; } header h1 span { color:var(--accent); }
+  .searchbar { display:flex; gap:10px; justify-content:center; margin:20px; flex-wrap:wrap; }
+  .searchbar input { width:min(480px,80vw); padding:12px 16px; border-radius:10px; border:1px solid #2a3345; background:var(--card); color:var(--text); font-size:15px; }
+  .searchbar button { padding:12px 22px; border:none; border-radius:10px; background:var(--accent); color:#001018; font-weight:700; cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; padding:10px 20px 40px; }
+  .card { background:var(--card); border-radius:12px; overflow:hidden; cursor:pointer; transition:transform .15s; border:1px solid #1c2333; }
+  .card:hover { transform:translateY(-4px); border-color:var(--accent); }
+  .card img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:#0e1219; }
+  .card .t { padding:8px 10px; font-size:13px; }
+  .card .s { padding:0 10px 8px; font-size:11px; color:var(--muted); }
+  .episodes { padding:10px 20px 40px; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .ep { background:var(--card); border:1px solid #1c2333; border-radius:10px; padding:12px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+  .ep:hover { border-color:var(--accent); }
+  .ep img { width:56px; height:72px; object-fit:cover; border-radius:6px; }
+  .streams { padding:10px 20px 60px; }
+  .stream-box { background:var(--card); border:1px solid #1c2333; border-radius:10px; padding:14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .stream-box a { color:var(--accent); text-decoration:none; word-break:break-all; font-size:13px; }
+  .pill { font-size:11px; background:#0e2a30; color:var(--accent); border-radius:20px; padding:3px 10px; }
+  .back { margin:14px 20px 0; background:none; border:1px solid #2a3345; color:var(--text); padding:8px 16px; border-radius:8px; cursor:pointer; }
+  #status { text-align:center; color:var(--muted); padding:16px; font-size:14px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<header><h1>My<span>Anime</span></h1><p style="color:var(--muted);font-size:13px;margin-top:6px">Zero database. Zero backend. Only FetchStream Pro API calls — data loads lazily, only when you click.</p></header>
+
+<div class="searchbar">
+  <input id="q" placeholder="Search anime… e.g. Boruto" onkeydown="if(event.key==='Enter')doSearch()" />
+  <button onclick="doSearch()">Search</button>
+</div>
+
+<div id="status"></div>
+<div id="results" class="grid"></div>
+<button id="backBtn" class="back hidden" onclick="goBack()">← Back</button>
+<div id="episodes" class="episodes"></div>
+<div id="streams" class="streams"></div>
+
+<script>
+/* =========================================================================
+   INTEGRATION GUIDE
+   -------------------------------------------------------------------------
+   1. Deploy the FetchStream Pro API (Vercel / VPS).
+   2. Put YOUR deployed API base URL below. That's the ONLY config needed.
+   3. Open this file. Done — search, episodes and streams load on demand.
+   ========================================================================= */
+const API_BASE = "https://your-deployed-api.vercel.app"; // <-- CHANGE THIS
+
+const $ = (id) => document.getElementById(id);
+const status = (msg) => { $("status").textContent = msg; };
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let history = [];
+
+async function api(path) {
+  const res = await fetch(API_BASE + path);
+  const body = await res.json();
+  if (!body.success) throw new Error(body.error?.message || "API error");
+  return body.data; // body.meta.cached tells you if it came from cache
+}
+
+async function doSearch() {
+  const q = $("q").value.trim();
+  if (q.length < 2) return status("Type at least 2 characters.");
+  show("loading");
+  status("Searching…");
+  try {
+    const data = await api("/search?q=" + encodeURIComponent(q));
+    renderResults(data.results);
+    status(data.total ? `${data.total} results` : "No results found.");
+  } catch (e) { status("Error: " + e.message); }
+}
+
+function renderResults(results) {
+  $("results").innerHTML = results.map(r => `
+    <div class="card" onclick='openSeries(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+      <img src="${esc(r.image)}" alt="" loading="lazy" onerror="this.style.display='none'">
+      <div class="t">${esc(r.title)}</div>
+      <div class="s">${esc(r.source)} · ${esc(r.type)}</div>
+    </div>`).join("");
+}
+
+async function openSeries(item) {
+  history.push(item);
+  show("loading");
+  status("Loading episodes…");
+  const src = item.source.toLowerCase().replace(" ", ""); // AnimeSalt -> animesalt
+  try {
+    const data = await api(`/${src}/episodes?url=${encodeURIComponent(item.link)}`);
+    $("results").classList.add("hidden");
+    $("backBtn").classList.remove("hidden");
+    $("episodes").innerHTML = data.episodes.map(ep => `
+      <div class="ep" onclick='openEpisode(${JSON.stringify({...ep, source: src})}).catch(e=>status(e.message))'>
+        <img src="${esc(ep.image)}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div><b>EP ${esc(ep.epNum)}</b><br><small style="color:var(--muted)">${esc(ep.title)}</small></div>
+      </div>`).join("");
+    status(data.episodes.length ? `${data.episodes.length} episodes` : "No episodes found.");
+  } catch (e) { status("Error: " + e.message); }
+}
+
+async function openEpisode(ep) {
+  show("loading");
+  status("Fetching stream links…");
+  const data = await api(`/${ep.source}/streams?url=${encodeURIComponent(ep.link)}`);
+  $("episodes").classList.add("hidden");
+  $("streams").innerHTML = `
+    <h3 style="margin:6px 0 12px">${esc(data.title || ep.title)}</h3>
+    ${data.streams.map(s => `
+      <div class="stream-box"><div><span class="pill">${esc(s.server)}${s.language ? " · " + esc(s.language) : ""}</span>
+      <div style="margin-top:6px"><a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.link)}</a></div></div></div>`).join("")}
+    ${data.downloads.length ? `<h4 style="margin:16px 0 10px">Downloads</h4>` +
+      data.downloads.map(d => `
+      <div class="stream-box"><div><span class="pill">${esc(d.server)}${d.quality ? " · " + esc(d.quality) : ""}</span>
+      <div style="margin-top:6px"><a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link)}</a></div></div></div>`).join("") : ""}`;
+  status("Stream links are lazy-fetched in real time. Add ?refresh=1 to any API URL to force a fresh fetch.");
+}
+
+function show(mode) {
+  $("streams").innerHTML = "";
+  $("episodes").innerHTML = "";
+  $("episodes").classList.add("hidden");
+  $("results").classList.toggle("hidden", mode !== "results");
+  if (mode === "results") { $("backBtn").classList.add("hidden"); history = []; }
+}
+
+function goBack() {
+  history.pop();
+  if (history.length === 0) { show("results"); status(""); }
+  else openSeries(history[history.length - 1]);
+}
+</script>
+</body>
+</html>
